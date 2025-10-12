@@ -1,6 +1,6 @@
 # 🎵 ICYRIP
 
-
+```text
  ________  ______   __  __   ______     ________  ______    
 /_______/\/_____/\ /_/\/_/\ /_____/\   /_______/\/_____/\   
 \__.::._\/\:::__\/ \ \ \ \ \\:::_ \ \  \__.::._\/\:::_ \ \  
@@ -8,9 +8,10 @@
    _\::\ \__\:\ \/_/\\::::_\/ \: __ `\ \  _\::\ \__\: ___\/ 
   /__\::\__/\\:\_\ \ \ \::\ \  \ \ `\ \ \/__\::\__/\\ \ \   
   \________\/ \_____\/  \__\/   \_\/ \_\/\________\/ \_\/   
+
                                                             
 
-
+```
 **ICYRIP** é um script de terminal em Python para baixar músicas e playlists do **YouTube** e **SoundCloud** e convertê-las para **MP3**.
 Funciona em **Windows** e **Linux**, é rápido, simples e totalmente personalizável.
 
