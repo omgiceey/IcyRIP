@@ -78,16 +78,6 @@ Siga o menu interativo para baixar ou converter suas músicas:
 [0] Sair
 ```
 
----
-
-## 📸 Screenshots
-
-
-![Exemplo do ICYRIP](imagens/G1QFfIiWsAA56Gx.png)
-![Exemplo do menu](imagens/G1QFfIVWUAADGaJ.png)
-
----
-
 ## 💡 Dicas
 
 * Use nomes simples para pastas (sem espaços complicados)
