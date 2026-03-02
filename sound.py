@@ -25,20 +25,17 @@ def mostrar_header():
 ░▓  ░ ░▒ ▒  ░ ██▒▒▒ ▒ ▒▓▒ ▒ ░░ ▒░▒░▒░ ░▒▓▒ ▒ ▒ ░ ▒░   ▒ ▒  ▒▒▓  ▒ 
  ▒ ░  ░  ▒  ▓██ ░▒░ ░ ░▒  ░ ░  ░ ▒ ▒░ ░░▒░ ░ ░ ░ ░░   ░ ▒░ ░ ▒  ▒ 
  ▒ ░░       ▒ ▒ ░░  ░  ░  ░  ░ ░ ░ ▒   ░░░ ░ ░    ░   ░ ░  ░ ░  ░ 
- ░  ░ ░     ░ ░           ░      ░ ░     ░              ░    ░    
-    ░       ░ ░                                            ░      
+ ░  ░ ░     ░ ░           ░      ░ ░     ░              ░    ░
+    ░       ░ ░                                            ░
 {RESET}"""
     )
-    print(f"{RED}✦ ICYSOUND SoundCloud | v1.1 ✦ By Icey — Powered by yt-dlp{RESET}")
+    print(f"{RED}✦ ICYSOUND SoundCloud | v1.2 ✦ By Icey — Powered by yt-dlp{RESET}")
     print(f"{RED}═══════════════════════════════════════════════{RESET}")
 
 
 def configurar_pasta():
     sistema = platform.system()
-    if sistema == "Windows":
-        pasta_padrao = os.path.expanduser("~\\Downloads\\SoundCloud")
-    else:
-        pasta_padrao = os.path.expanduser("~/SoundCloud")
+    pasta_padrao = os.path.expanduser("~\\Downloads\\SoundCloud") if sistema == "Windows" else os.path.expanduser("~/SoundCloud")
 
     save_path = input(f"{RED}Digite o caminho para salvar as músicas (Enter para padrão {pasta_padrao}): {RESET}").strip()
     if not save_path:
@@ -54,21 +51,20 @@ def configurar_pasta():
 
 def resolver_ffmpeg_location(ffmpeg_path):
     if os.path.isabs(ffmpeg_path) or os.path.sep in ffmpeg_path:
-        return os.path.dirname(ffmpeg_path) if os.path.dirname(ffmpeg_path) else ffmpeg_path
+        diretorio = os.path.dirname(ffmpeg_path)
+        return diretorio if diretorio else ffmpeg_path
     return ffmpeg_path
 
 
-def adicionar_ffmpeg_ao_path(ffmpeg_path):
-    pasta_ffmpeg = resolver_ffmpeg_location(ffmpeg_path)
-    if platform.system() == "Windows" and pasta_ffmpeg and pasta_ffmpeg != "ffmpeg.exe":
-        path_atual = os.environ.get("PATH", "")
-        if pasta_ffmpeg not in path_atual:
-            os.environ["PATH"] = pasta_ffmpeg + ";" + path_atual
-            try:
-                subprocess.run(f'setx PATH "{pasta_ffmpeg};%PATH%"', shell=True, check=True)
-                print(f"\n✅ ffmpeg adicionado ao PATH: {pasta_ffmpeg}")
-            except subprocess.CalledProcessError:
-                print("\n⚠️ Não foi possível adicionar ffmpeg ao PATH permanentemente. Caminho temporário usado.")
+def validar_dependencia(comando, nome):
+    try:
+        subprocess.run(comando, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except FileNotFoundError:
+        print(f"{RED}{nome} não encontrado! Instale ou configure o caminho correto.{RESET}")
+    except subprocess.CalledProcessError:
+        print(f"{RED}{nome} falhou ao executar. Verifique a instalação.{RESET}")
+    return False
 
 
 def configurar_dependencias():
@@ -82,26 +78,10 @@ def configurar_dependencias():
     if not ffmpeg_path:
         ffmpeg_path = "ffmpeg.exe" if sistema == "Windows" else "ffmpeg"
 
-    try:
-        subprocess.run([yt_dlp_path, "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except FileNotFoundError:
-        print(f"{RED}yt-dlp não encontrado!{RESET}")
+    if not validar_dependencia([yt_dlp_path, "--version"], "yt-dlp"):
         sys.exit(1)
-    except subprocess.CalledProcessError:
-        print(f"{RED}yt-dlp falhou ao executar. Verifique a instalação.{RESET}")
+    if not validar_dependencia([ffmpeg_path, "-version"], "ffmpeg"):
         sys.exit(1)
-
-    try:
-        subprocess.run([ffmpeg_path, "-version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except FileNotFoundError:
-        print(f"{RED}ffmpeg não encontrado!{RESET}")
-        sys.exit(1)
-    except subprocess.CalledProcessError:
-        print(f"{RED}ffmpeg falhou ao executar. Verifique a instalação.{RESET}")
-        sys.exit(1)
-
-    if sistema == "Windows":
-        adicionar_ffmpeg_ao_path(ffmpeg_path)
 
     return yt_dlp_path, ffmpeg_path
 
@@ -117,6 +97,11 @@ def executar_comando(comando, mensagem_erro):
 
 def baixar_musica(save_path, yt_dlp_path, ffmpeg_path):
     url = input(f"{RED}Digite o link da música/playlist do SoundCloud: {RESET}").strip()
+    if not url:
+        print(f"{RED}Nenhum link informado.{RESET}")
+        input(f"{RED}Pressione Enter para continuar...{RESET}")
+        return
+
     comando = [
         yt_dlp_path,
         "--extract-audio",

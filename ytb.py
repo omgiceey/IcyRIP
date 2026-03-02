@@ -23,19 +23,16 @@ def mostrar_header():
 ██║██║      ╚████╔╝    ██║   ██████╔╝
 ██║██║       ╚██╔╝     ██║   ██╔══██╗
 ██║╚██████╗   ██║      ██║   ██████╔╝
-╚═╝ ╚═════╝   ╚═╝      ╚═╝   ╚═════╝                                                                                                  
+╚═╝ ╚═════╝   ╚═╝      ╚═╝   ╚═════╝
 {RESET}"""
     )
-    print(f"{CYAN}✦ ICYRIP | v1.5 ✦ By Icey — Powered by yt-dlp{RESET}")
+    print(f"{CYAN}✦ ICYRIP | v1.6 ✦ By Icey — Powered by yt-dlp{RESET}")
     print(f"{CYAN}═══════════════════════════════════════════════{RESET}")
 
 
 def configurar_pasta():
     sistema = platform.system()
-    if sistema == "Windows":
-        pasta_padrao = os.path.expanduser("~\\Downloads\\Musicas")
-    else:
-        pasta_padrao = os.path.expanduser("~/Músicas")
+    pasta_padrao = os.path.expanduser("~\\Downloads\\Musicas") if sistema == "Windows" else os.path.expanduser("~/Músicas")
 
     print(f"{CYAN}Pasta de destino:{RESET} ", end="")
     save_path = input(
@@ -54,8 +51,20 @@ def configurar_pasta():
 
 def resolver_ffmpeg_location(ffmpeg_path):
     if os.path.isabs(ffmpeg_path) or os.path.sep in ffmpeg_path:
-        return os.path.dirname(ffmpeg_path) if os.path.dirname(ffmpeg_path) else ffmpeg_path
+        diretorio = os.path.dirname(ffmpeg_path)
+        return diretorio if diretorio else ffmpeg_path
     return ffmpeg_path
+
+
+def validar_dependencia(comando, nome):
+    try:
+        subprocess.run(comando, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except FileNotFoundError:
+        print(f"{RED}{nome} não encontrado! Instale ou configure o caminho correto.{RESET}")
+    except subprocess.CalledProcessError:
+        print(f"{RED}{nome} falhou ao executar. Verifique a instalação.{RESET}")
+    return False
 
 
 def configurar_dependencias():
@@ -70,22 +79,9 @@ def configurar_dependencias():
     if not ffmpeg_path:
         ffmpeg_path = "ffmpeg.exe" if sistema == "Windows" else "ffmpeg"
 
-    try:
-        subprocess.run([yt_dlp_path, "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except FileNotFoundError:
-        print(f"{RED}yt-dlp não encontrado! Instale ou configure o caminho correto.{RESET}")
+    if not validar_dependencia([yt_dlp_path, "--version"], "yt-dlp"):
         sys.exit(1)
-    except subprocess.CalledProcessError:
-        print(f"{RED}yt-dlp falhou ao executar. Verifique a instalação.{RESET}")
-        sys.exit(1)
-
-    try:
-        subprocess.run([ffmpeg_path, "-version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except FileNotFoundError:
-        print(f"{RED}ffmpeg não encontrado! Instale ou configure o caminho correto.{RESET}")
-        sys.exit(1)
-    except subprocess.CalledProcessError:
-        print(f"{RED}ffmpeg falhou ao executar. Verifique a instalação.{RESET}")
+    if not validar_dependencia([ffmpeg_path, "-version"], "ffmpeg"):
         sys.exit(1)
 
     return yt_dlp_path, ffmpeg_path
@@ -102,6 +98,11 @@ def executar_comando(comando, mensagem_erro):
 
 def baixar_playlist(save_path, yt_dlp_path, ffmpeg_path):
     playlist_url = input(f"{CYAN}Digite o link da playlist do YouTube: {RESET}").strip()
+    if not playlist_url:
+        print(f"{RED}Nenhum link informado.{RESET}")
+        input(f"{CYAN}Pressione Enter para continuar...{RESET}")
+        return
+
     comando = [
         yt_dlp_path,
         "--extract-audio",
@@ -121,6 +122,11 @@ def baixar_playlist(save_path, yt_dlp_path, ffmpeg_path):
 
 def baixar_musica(save_path, yt_dlp_path, ffmpeg_path):
     musica_url = input(f"{CYAN}Digite a URL da música que deseja baixar: {RESET}").strip()
+    if not musica_url:
+        print(f"{RED}Nenhum link informado.{RESET}")
+        input(f"{CYAN}Pressione Enter para continuar...{RESET}")
+        return
+
     comando = [
         yt_dlp_path,
         "--extract-audio",
@@ -140,13 +146,22 @@ def baixar_musica(save_path, yt_dlp_path, ffmpeg_path):
 
 def converter_para_mp3(save_path, ffmpeg_path):
     arquivo = input(f"{CYAN}Digite o nome do arquivo (com extensão) para converter para MP3: {RESET}").strip()
-    entrada = os.path.join(save_path, arquivo)
-    saida = os.path.join(save_path, arquivo.rsplit(".", 1)[0] + ".mp3")
+    if not arquivo or "." not in arquivo:
+        print(f"{RED}Arquivo inválido. Informe nome com extensão.{RESET}")
+        input(f"{CYAN}Pressione Enter para continuar...{RESET}")
+        return
 
-    comando = [ffmpeg_path, "-i", entrada, saida]
+    entrada = os.path.join(save_path, arquivo)
+    if not os.path.isfile(entrada):
+        print(f"{RED}Arquivo não encontrado: {entrada}{RESET}")
+        input(f"{CYAN}Pressione Enter para continuar...{RESET}")
+        return
+
+    saida = os.path.join(save_path, arquivo.rsplit(".", 1)[0] + ".mp3")
+    comando = [ffmpeg_path, "-y", "-i", entrada, saida]
     print(f"{CYAN}Convertendo para MP3...{RESET}")
     if executar_comando(comando, "Falha ao converter arquivo para MP3."):
-        print(f"{GREEN}Conversão concluída! Salvo em: {save_path}{RESET}")
+        print(f"{GREEN}Conversão concluída! Salvo em: {saida}{RESET}")
     input(f"{CYAN}Pressione Enter para continuar...{RESET}")
 
 

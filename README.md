@@ -72,6 +72,10 @@ Execute o script no terminal:
 ```bash
 python ytb.py    # YouTube
 python sound.py  # SoundCloud
+
+# Linux (alternativa)
+python3 ytb.py
+python3 sound.py
 ```
 
 Siga o menu interativo para baixar ou converter suas músicas:
