@@ -32,7 +32,7 @@ def configurar_pasta():
     sistema = platform.system()
     if sistema == "Windows":
         pasta_padrao = os.path.expanduser("~\\Downloads\\SoundCloud")
-    else:  # Linux/macOS
+    else: 
         pasta_padrao = os.path.expanduser("~/SoundCloud")
 
     save_path = input(f"{RED}Digite o caminho para salvar as músicas (Enter para padrão {pasta_padrao}): {RESET}").strip()
@@ -69,7 +69,7 @@ def configurar_dependencias():
     if not ffmpeg_path:
         ffmpeg_path = "ffmpeg.exe" if sistema == "Windows" else "ffmpeg"
 
-    # Verifica se executáveis existem
+  
     try:
         subprocess.run([yt_dlp_path, "--version"], check=True, stdout=subprocess.DEVNULL)
     except:
@@ -127,3 +127,4 @@ if __name__ == "__main__":
     mostrar_header()
     yt_dlp_path, ffmpeg_path = configurar_dependencias()
     menu()
+
