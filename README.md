@@ -48,7 +48,7 @@ Funciona em **Windows** e **Linux**, é rápido, simples e totalmente personaliz
 1. Clone ou baixe o repositório:
 
 ```bash
-git clone https://github.com/SEU-USUARIO/ICYRIP.git
+git clone https://github.com/omgiceey/IcyRIP.git
 ```
 
 2. Entre na pasta do projeto:
