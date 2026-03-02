@@ -70,8 +70,8 @@ pip install -r requirements.txt
 Execute o script no terminal:
 
 ```bash
-python main.py   # Windows
-python3 main.py  # Linux
+python ytb.py    # YouTube
+python sound.py  # SoundCloud
 ```
 
 Siga o menu interativo para baixar ou converter suas músicas:
