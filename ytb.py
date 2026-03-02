@@ -29,7 +29,7 @@ def configurar_pasta():
     sistema = platform.system()
     if sistema == "Windows":
         pasta_padrao = os.path.expanduser("~\\Downloads\\Musicas")
-    else:  # Linux/macOS
+    else:  
         pasta_padrao = os.path.expanduser("~/Músicas")
 
     print(f"{CYAN}Pasta de destino:{RESET} ", end="")
@@ -56,7 +56,7 @@ def configurar_dependencias():
     if not ffmpeg_path:
         ffmpeg_path = "ffmpeg.exe" if sistema == "Windows" else "ffmpeg"
 
-    # Testa se executáveis estão funcionando
+    
     try:
         subprocess.run([yt_dlp_path, "--version"], check=True, stdout=subprocess.DEVNULL)
     except:
@@ -135,3 +135,4 @@ if __name__ == "__main__":
     mostrar_header()
     yt_dlp_path, ffmpeg_path = configurar_dependencias()
     menu()
+
