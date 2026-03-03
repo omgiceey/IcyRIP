@@ -92,11 +92,12 @@ Menu do YouTube:
 
 - Prefira pastas com nomes simples
 - Mantenha `yt-dlp` e `ffmpeg` atualizados
-- Use uma pasta para playlist e outra para downloads avulsos
+- Use uma pasta para playlist e outra para downloads
 
 ---
 
 ## 📌 Nota
 
 Esse projeto nasceu com apoio de IA, mas os ajustes finais e testes foram feitos manualmente por mim.
-Se você usar e curtir, já valeu demais. 😄
+Se você usar e curtir, já valeu demais.
+Tmj 😄
