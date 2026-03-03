@@ -96,8 +96,6 @@ Menu do YouTube:
 
 ---
 
----
-
 ## 📌 Nota
 
 Esse projeto nasceu com apoio de IA, mas os ajustes finais e testes foram feitos manualmente por mim.
