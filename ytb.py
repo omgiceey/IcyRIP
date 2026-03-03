@@ -200,11 +200,14 @@ def baixar_playlist(save_path, yt_dlp_path, ffmpeg_path):
         input(f"{CYAN}Pressione Enter para continuar...{RESET}")
         return
 
+    # permitir ao usuário escolher formato além de MP3
+    formato = escolher_formato_audio()
+
     comando = [
         yt_dlp_path,
         "--extract-audio",
         "--audio-format",
-        "mp3",
+        formato,
         "--restrict-filenames",
         "--ffmpeg-location",
         resolver_ffmpeg_location(ffmpeg_path),
@@ -225,11 +228,14 @@ def baixar_musica(save_path, yt_dlp_path, ffmpeg_path):
         input(f"{CYAN}Pressione Enter para continuar...{RESET}")
         return
 
+    # permitir ao usuário escolher formato além de MP3
+    formato = escolher_formato_audio()
+
     comando = [
         yt_dlp_path,
         "--extract-audio",
         "--audio-format",
-        "mp3",
+        formato,
         "--restrict-filenames",
         "--ffmpeg-location",
         resolver_ffmpeg_location(ffmpeg_path),
@@ -243,8 +249,20 @@ def baixar_musica(save_path, yt_dlp_path, ffmpeg_path):
     input(f"{CYAN}Pressione Enter para continuar...{RESET}")
 
 
-def converter_para_mp3(save_path, ffmpeg_path):
-    arquivo = input(f"{CYAN}Digite o nome do arquivo (com extensão) para converter para MP3: {RESET}").strip()
+def escolher_formato_audio(default="mp3"):
+    """Permite ao usuário escolher o formato de saída de áudio."""
+    opcoes = ["mp3", "m4a", "opus", "wav", "aac", "flac", "ogg"]
+    escolha = input(f"{CYAN}Formato de saída (padrão {default}). Opções: {', '.join(opcoes)}: {RESET}").strip().lower()
+    if not escolha:
+        return default
+    if escolha in opcoes:
+        return escolha
+    print(f"{RED}Formato inválido. Usando {default}.{RESET}")
+    return default
+
+
+def converter_para_audio(save_path, ffmpeg_path):
+    arquivo = input(f"{CYAN}Digite o nome do arquivo (com extensão) para converter: {RESET}").strip()
     if not arquivo or "." not in arquivo:
         print(f"{RED}Arquivo inválido. Informe nome com extensão.{RESET}")
         input(f"{CYAN}Pressione Enter para continuar...{RESET}")
@@ -256,10 +274,11 @@ def converter_para_mp3(save_path, ffmpeg_path):
         input(f"{CYAN}Pressione Enter para continuar...{RESET}")
         return
 
-    saida = os.path.join(save_path, arquivo.rsplit(".", 1)[0] + ".mp3")
+    formato = escolher_formato_audio()
+    saida = os.path.join(save_path, arquivo.rsplit(".", 1)[0] + f".{formato}")
     comando = [ffmpeg_path, "-y", "-i", entrada, saida]
-    print(f"{CYAN}Convertendo para MP3...{RESET}")
-    if executar_comando(comando, "Falha ao converter arquivo para MP3."):
+    print(f"{CYAN}Convertendo para {formato}...{RESET}")
+    if executar_comando(comando, f"Falha ao converter arquivo para {formato}."):
         print(f"{GREEN}Conversão concluída! Salvo em: {saida}{RESET}")
     input(f"{CYAN}Pressione Enter para continuar...{RESET}")
 
@@ -285,7 +304,7 @@ def menu(yt_dlp_path, ffmpeg_path):
             elif opcao == "2":
                 baixar_musica(save_path, yt_dlp_path, ffmpeg_path)
             elif opcao == "3":
-                converter_para_mp3(save_path, ffmpeg_path)
+                converter_para_audio(save_path, ffmpeg_path)
             elif opcao == "0":
                 print(f"{CYAN}Saindo...{RESET}")
                 break
