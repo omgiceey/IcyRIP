@@ -96,24 +96,6 @@ Menu do YouTube:
 
 ---
 
-## 📤 Como subir pro GitHub (sem complicação)
-
-Se você alterou algo e quer enviar pro seu repositório:
-
-```bash
-git add .
-git commit -m "Atualiza projeto"
-git push origin main
-```
-
-Se sua branch não for `main`, troque no último comando:
-
-```bash
-git push origin NOME_DA_BRANCH
-```
-
-Se o GitHub pedir senha, use um **Personal Access Token**.
-
 ---
 
 ## 📌 Nota
