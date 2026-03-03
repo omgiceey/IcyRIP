@@ -66,13 +66,60 @@ cd ICYRIP
 2. Descompacte em uma pasta
 3. Abra o terminal nessa pasta
 
-Sem problema usar `.zip` — o script funciona normal!
+Sem problema usar `.zip` o script funciona normal!
 
 Instale dependências Python (opcional):
 
 ```bash
 pip install -r requirements.txt
 ```
+Se o seu sistema for gerenciado (por exemplo, distribuições que bloqueiam instalações globais via pip), prefira usar `pipx`, um ambiente virtual (`python -m venv .venv`).
+
+```bash
+# usando pipx (recomendado para ferramentas CLI isoladas)
+pipx install yt-dlp
+
+# ou em um venv local
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+
+```
+
+Segue abaixo alternativas práticas para instalar o `yt-dlp` e o `ffmpeg` por plataforma.
+
+### Instalando yt-dlp e ffmpeg (alternativas rápidas)
+
+Linux (Debian/Ubuntu):
+
+```bash
+# ffmpeg via apt
+sudo apt update && sudo apt install ffmpeg
+
+# yt-dlp via pipx (recomendado)
+pipx install yt-dlp
+
+
+```
+
+Linux (baixar binários):
+
+```bash
+# Baixe o binário do yt-dlp e mova para ~/.local/bin
+curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
+chmod +x ~/.local/bin/yt-dlp
+
+# Baixe FFmpeg builds (ex.: https://johnvansickle.com/ffmpeg/ ou site oficial) e extraia
+
+```
+
+Se preferir, baixe os binários diretamente das releases oficiais:
+
+- yt-dlp: https://github.com/yt-dlp/yt-dlp/releases
+- FFmpeg: https://ffmpeg.org/download.html
+
+Observação: em ambientes gerenciados (ex.: mensagem "externally-managed-environment" do pip), a atualização via `pip install --upgrade yt-dlp` pode falhar; nesses casos use `pipx`, um venv, ou o binário direto.
 
 ---
 
