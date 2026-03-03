@@ -8,56 +8,52 @@
    _\::\ \__\:\ \/_/\\::::_\/ \: __ `\ \  _\::\ \__\: ___\/ 
   /__\::\__/\\:\_\ \ \ \::\ \  \ \ `\ \ \/__\::\__/\\ \ \   
   \________\/ \_____\/  \__\/   \_\/ \_\/\________\/ \_\/   
-
-                                                            
-
 ```
-**ICYRIP** é um script de terminal em Python para baixar músicas e playlists do **YouTube** e **SoundCloud** e convertê-las para **MP3**.
-Funciona em **Windows** e **Linux**, é rápido, simples e totalmente personalizável.
+
+O **ICYRIP** é uma ferramenta de terminal feita em Python para baixar áudio do **YouTube** e do **SoundCloud** e salvar em **MP3**.
+A ideia é ser simples: abrir, colar o link, baixar e pronto.
 
 ---
 
-## ⚡ Funcionalidades principais
+## ⚡ O que ele faz
 
-* Baixar playlists inteiras
-* Baixar músicas individuais
-* Converter arquivos de áudio para MP3
-* Configurar pastas de download personalizadas
+- Baixa playlists do YouTube
+- Baixa músicas individuais
+- Converte arquivos para MP3
+- Permite escolher a pasta de destino
 
 ---
 
 ## 🛠 Pré-requisitos
 
-* Python 3.12+
-* [yt-dlp](https://github.com/yt-dlp/yt-dlp/releases)
-* [ffmpeg](https://ffmpeg.org/download.html)
+Você precisa ter:
 
-> 🔹 No Windows: coloque os executáveis em pastas simples, ex.:
-> `C:\Tools\yt-dlp.exe` e `C:\Tools\ffmpeg\bin\ffmpeg.exe`
+- Python 3.12+
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp/releases)
+- [ffmpeg](https://ffmpeg.org/download.html)
 
-> 🔹 No Linux: instale via terminal:
->
-> ```bash
-> sudo apt update && sudo apt install yt-dlp ffmpeg -y
-> ```
+### Windows
+Use caminhos simples para os executáveis, por exemplo:
+
+- `C:\Tools\yt-dlp.exe`
+- `C:\Tools\ffmpeg\bin\ffmpeg.exe`
+
+### Linux (Debian/Ubuntu)
+
+```bash
+sudo apt update && sudo apt install yt-dlp ffmpeg -y
+```
 
 ---
 
 ## 🖥 Instalação
 
-1. Clone ou baixe o repositório:
-
 ```bash
 git clone https://github.com/omgiceey/IcyRIP.git
-```
-
-2. Entre na pasta do projeto:
-
-```bash
 cd ICYRIP
 ```
 
-3. Instale dependências Python (se necessário):
+Se precisar de dependências Python extras:
 
 ```bash
 pip install -r requirements.txt
@@ -65,33 +61,62 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 Uso
+## 🚀 Como usar
 
-Execute o script no terminal:
+No terminal, execute:
 
 ```bash
-python main.py   # Windows
-python3 main.py  # Linux
+python ytb.py    # módulo YouTube
+python sound.py  # módulo SoundCloud
 ```
 
-Siga o menu interativo para baixar ou converter suas músicas:
+No Linux, se necessário:
 
+```bash
+python3 ytb.py
+python3 sound.py
 ```
+
+Menu do YouTube:
+
+```text
 [1] Baixar Playlist
 [2] Baixar Música
 [3] Converter para MP3
 [0] Sair
 ```
 
-## 💡 Dicas
+---
 
-* Use nomes simples para pastas (sem espaços complicados)
-* Mantenha `yt-dlp` e `ffmpeg` atualizados
-* Separe pastas diferentes para playlists e músicas individuais
+## 💡 Dicas rápidas
+
+- Prefira pastas com nomes simples
+- Mantenha `yt-dlp` e `ffmpeg` atualizados
+- Use uma pasta para playlist e outra para downloads avulsos
+
+---
+
+## 📤 Como subir pro GitHub (sem complicação)
+
+Se você alterou algo e quer enviar pro seu repositório:
+
+```bash
+git add .
+git commit -m "Atualiza projeto"
+git push origin main
+```
+
+Se sua branch não for `main`, troque no último comando:
+
+```bash
+git push origin NOME_DA_BRANCH
+```
+
+Se o GitHub pedir senha, use um **Personal Access Token**.
 
 ---
 
 ## 📌 Nota
 
-O projeto foi criado com ajuda de IA, mas todos os ajustes foram feitos por mim.
-Espero de coração que gostem — já estava na hora de lançar aqui no GitHub! 😄
+Esse projeto nasceu com apoio de IA, mas os ajustes finais e testes foram feitos manualmente por mim.
+Se você usar e curtir, já valeu demais. 😄
