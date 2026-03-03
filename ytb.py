@@ -35,7 +35,7 @@ def mostrar_header():
 
 
 def parse_progress(line):
-    # tenta padrões comuns do yt-dlp: percent, total, speed e ETA
+   
     m = re.search(r"(?P<pct>\d{1,3}(?:\.\d+)?)%.*?of\s+(?P<total>[\d\.]+[KMGT]?i?B).*?at\s+(?P<speed>[\d\.]+[KMGT]?i?B/s).*?ETA\s+(?P<eta>\S+)", line)
     if m:
         return m.groupdict()
@@ -161,7 +161,7 @@ def executar_comando(comando, mensagem_erro):
                 sys.stdout.write(f"\r{line_out}")
                 sys.stdout.flush()
             elif prog and 'time' in prog:
-                # ffmpeg-like short info when available
+                
                 t = prog.get('time')
                 sp = prog.get('speed')
                 if VERBOSE:
@@ -200,7 +200,7 @@ def baixar_playlist(save_path, yt_dlp_path, ffmpeg_path):
         input(f"{CYAN}Pressione Enter para continuar...{RESET}")
         return
 
-    # permitir ao usuário escolher formato além de MP3
+    
     formato = escolher_formato_audio()
 
     comando = [
@@ -228,7 +228,7 @@ def baixar_musica(save_path, yt_dlp_path, ffmpeg_path):
         input(f"{CYAN}Pressione Enter para continuar...{RESET}")
         return
 
-    # permitir ao usuário escolher formato além de MP3
+    
     formato = escolher_formato_audio()
 
     comando = [
