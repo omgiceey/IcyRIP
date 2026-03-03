@@ -1,0 +1,5 @@
+# Dependências opcionais / recomendadas
+# Nota: ffmpeg é um binário do sistema (não via pip).
+# yt-dlp pode ser instalado via pip, pipx, ou baixando o binário.
+yt-dlp
+colorama
