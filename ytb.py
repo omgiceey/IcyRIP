@@ -3,6 +3,8 @@ import platform
 import subprocess
 import sys
 import time
+import shutil
+from pathlib import Path
 
 CYAN = "\033[96m"
 RESET = "\033[0m"
@@ -32,56 +34,79 @@ def mostrar_header():
 
 def configurar_pasta():
     sistema = platform.system()
-    pasta_padrao = os.path.expanduser("~\\Downloads\\Musicas") if sistema == "Windows" else os.path.expanduser("~/Músicas")
+    pasta_padrao = Path.home() / ("Downloads" if sistema == "Windows" else "") / ("Musicas" if sistema == "Windows" else "Músicas")
 
     print(f"{CYAN}Pasta de destino:{RESET} ", end="")
     save_path = input(
         f"{CYAN}Digite o caminho completo da pasta ou pressione Enter para usar o padrão ({pasta_padrao}): {RESET}"
     ).strip()
     if not save_path:
-        save_path = pasta_padrao
+        save_path = str(pasta_padrao)
 
-    if not os.path.isdir(save_path):
-        os.makedirs(save_path, exist_ok=True)
-        print(f"{GREEN}Pasta criada em: {save_path}{RESET}")
+    save_dir = Path(save_path).expanduser()
+    if not save_dir.exists():
+        save_dir.mkdir(parents=True, exist_ok=True)
+        print(f"{GREEN}Pasta criada em: {save_dir}{RESET}")
     else:
-        print(f"{GREEN}Pasta configurada: {save_path}{RESET}")
-    return save_path
+        print(f"{GREEN}Pasta configurada: {save_dir}{RESET}")
+    return str(save_dir.resolve())
 
 
 def resolver_ffmpeg_location(ffmpeg_path):
+    if os.path.isdir(ffmpeg_path):
+        return ffmpeg_path
+
     if os.path.isabs(ffmpeg_path) or os.path.sep in ffmpeg_path:
         diretorio = os.path.dirname(ffmpeg_path)
         return diretorio if diretorio else ffmpeg_path
+   
+    found = shutil.which(ffmpeg_path)
+    if found:
+        return os.path.dirname(found)
     return ffmpeg_path
+def localizar_executavel(user_input, default_name):
+    if user_input:
+        p = Path(user_input).expanduser()
+        if p.is_file() and os.access(str(p), os.X_OK):
+            return str(p)
+        if p.is_dir():
+            cand = p / default_name
+            if cand.is_file() and os.access(str(cand), os.X_OK):
+                return str(cand)
+    found = shutil.which(default_name)
+    return found
 
 
 def validar_dependencia(comando, nome):
     try:
-        subprocess.run(comando, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return True
+        proc = subprocess.run(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if proc.returncode == 0:
+            return True
+        else:
+            print(f"{RED}{nome} falhou ao executar. Saída: {proc.stderr}{RESET}")
     except FileNotFoundError:
         print(f"{RED}{nome} não encontrado! Instale ou configure o caminho correto.{RESET}")
-    except subprocess.CalledProcessError:
-        print(f"{RED}{nome} falhou ao executar. Verifique a instalação.{RESET}")
+    except Exception as e:
+        print(f"{RED}Erro ao validar {nome}: {e}{RESET}")
     return False
 
 
 def configurar_dependencias():
     sistema = platform.system()
     print(f"{CYAN}Configuração das dependências:{RESET}")
+    yt_dlp_input = input(f"{CYAN}Digite o caminho do yt-dlp (ou Enter se estiver no PATH): {RESET}").strip()
+    default_yt = "yt-dlp.exe" if sistema == "Windows" else "yt-dlp"
+    yt_dlp_path = localizar_executavel(yt_dlp_input, default_yt) or shutil.which(default_yt)
 
-    yt_dlp_path = input(f"{CYAN}Digite o caminho do yt-dlp (ou Enter se estiver no PATH): {RESET}").strip()
-    if not yt_dlp_path:
-        yt_dlp_path = "yt-dlp.exe" if sistema == "Windows" else "yt-dlp"
+    ffmpeg_input = input(f"{CYAN}Digite o caminho do ffmpeg (ou Enter se estiver no PATH): {RESET}").strip()
+    default_ff = "ffmpeg.exe" if sistema == "Windows" else "ffmpeg"
+    ffmpeg_path = localizar_executavel(ffmpeg_input, default_ff) or shutil.which(default_ff)
 
-    ffmpeg_path = input(f"{CYAN}Digite o caminho do ffmpeg (ou Enter se estiver no PATH): {RESET}").strip()
-    if not ffmpeg_path:
-        ffmpeg_path = "ffmpeg.exe" if sistema == "Windows" else "ffmpeg"
-
-    if not validar_dependencia([yt_dlp_path, "--version"], "yt-dlp"):
+    if not yt_dlp_path or not validar_dependencia([yt_dlp_path, "--version"], "yt-dlp"):
+        print(f"{RED}yt-dlp não encontrado ou inválido. Instale ou informe o caminho correto.{RESET}")
         sys.exit(1)
-    if not validar_dependencia([ffmpeg_path, "-version"], "ffmpeg"):
+    if not ffmpeg_path or not validar_dependencia([ffmpeg_path, "-version"], "ffmpeg"):
+        print(f"{RED}ffmpeg não encontrado ou inválido. Instale ou informe o caminho correto.{RESET}")
         sys.exit(1)
 
     return yt_dlp_path, ffmpeg_path
@@ -89,10 +114,17 @@ def configurar_dependencias():
 
 def executar_comando(comando, mensagem_erro):
     try:
-        subprocess.run(comando, check=True)
-        return True
-    except subprocess.CalledProcessError:
-        print(f"{RED}{mensagem_erro}{RESET}")
+        proc = subprocess.run(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if proc.returncode == 0:
+            return True
+        else:
+            print(f"{RED}{mensagem_erro}\n{proc.stderr}{RESET}")
+            return False
+    except FileNotFoundError:
+        print(f"{RED}Comando não encontrado: {comando[0]}{RESET}")
+        return False
+    except Exception as e:
+        print(f"{RED}Erro ao executar comando: {e}{RESET}")
         return False
 
 
@@ -108,6 +140,7 @@ def baixar_playlist(save_path, yt_dlp_path, ffmpeg_path):
         "--extract-audio",
         "--audio-format",
         "mp3",
+        "--restrict-filenames",
         "--ffmpeg-location",
         resolver_ffmpeg_location(ffmpeg_path),
         "-o",
@@ -132,6 +165,7 @@ def baixar_musica(save_path, yt_dlp_path, ffmpeg_path):
         "--extract-audio",
         "--audio-format",
         "mp3",
+        "--restrict-filenames",
         "--ffmpeg-location",
         resolver_ffmpeg_location(ffmpeg_path),
         "-o",
@@ -176,22 +210,25 @@ def exibir_opcoes():
 
 def menu(yt_dlp_path, ffmpeg_path):
     save_path = configurar_pasta()
-    while True:
-        mostrar_header()
-        exibir_opcoes()
-        opcao = input(f"{CYAN}Selecione a opção: {RESET}").strip()
-        if opcao == "1":
-            baixar_playlist(save_path, yt_dlp_path, ffmpeg_path)
-        elif opcao == "2":
-            baixar_musica(save_path, yt_dlp_path, ffmpeg_path)
-        elif opcao == "3":
-            converter_para_mp3(save_path, ffmpeg_path)
-        elif opcao == "0":
-            print(f"{CYAN}Saindo...{RESET}")
-            break
-        else:
-            print(f"{RED}Opção inválida. Tente novamente.{RESET}")
-            time.sleep(1)
+    try:
+        while True:
+            mostrar_header()
+            exibir_opcoes()
+            opcao = input(f"{CYAN}Selecione a opção: {RESET}").strip()
+            if opcao == "1":
+                baixar_playlist(save_path, yt_dlp_path, ffmpeg_path)
+            elif opcao == "2":
+                baixar_musica(save_path, yt_dlp_path, ffmpeg_path)
+            elif opcao == "3":
+                converter_para_mp3(save_path, ffmpeg_path)
+            elif opcao == "0":
+                print(f"{CYAN}Saindo...{RESET}")
+                break
+            else:
+                print(f"{RED}Opção inválida. Tente novamente.{RESET}")
+                time.sleep(1)
+    except KeyboardInterrupt:
+        print(f"\n{CYAN}Encerrando...{RESET}")
 
 
 if __name__ == "__main__":
