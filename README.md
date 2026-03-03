@@ -1,97 +1,162 @@
 # 🎵 ICYRIP
 
-```text
- ________  ______   __  __   ______     ________  ______    
-/_______/\/_____/\ /_/\/_/\ /_____/\   /_______/\/_____/\   
-\__.::._\/\:::__\/ \ \ \ \ \\:::_ \ \  \__.::._\/\:::_ \ \  
-   \::\ \  \:\ \  __\:\_\ \ \\:(_) ) )_   \::\ \  \:(_) \ \ 
-   _\::\ \__\:\ \/_/\\::::_\/ \: __ `\ \  _\::\ \__\: ___\/ 
-  /__\::\__/\\:\_\ \ \ \::\ \  \ \ `\ \ \/__\::\__/\\ \ \   
-  \________\/ \_____\/  \__\/   \_\/ \_\/\________\/ \_\/   
+**ICYRIP** é uma ferramenta de terminal feita em Python para baixar áudio do YouTube e SoundCloud e converter automaticamente para MP3.
 
-                                                            
+Simples, direta e funcional:  
+**colar link → baixar → converter → pronto.**
 
+---
+
+## ✨ Recursos
+
+- Download de playlists do YouTube
+- Download de músicas individuais
+- Download de faixas e playlists do SoundCloud
+- Conversão automática para MP3
+- Escolha de pasta de destino
+- Interface simples via terminal
+
+---
+
+## 📦 Requisitos
+
+Antes de usar, instale:
+
+- Python 3.10+
+- yt-dlp
+- FFmpeg
+
+---
+
+## 🖥 Instalação no Windows (passo a passo)
+
+### 1) Instalar Python
+
+Baixe em:  
+https://www.python.org/downloads/
+
+Durante a instalação, marque a opção **Add Python to PATH**.
+
+### 2) Instalar yt-dlp
+
+No CMD/PowerShell:
+
+```bash
+pip install -U yt-dlp
 ```
-**ICYRIP** é um script de terminal em Python para baixar músicas e playlists do **YouTube** e **SoundCloud** e convertê-las para **MP3**.
-Funciona em **Windows** e **Linux**, é rápido, simples e totalmente personalizável.
+
+Teste:
+
+```bash
+yt-dlp --version
+```
+
+### 3) Instalar FFmpeg
+
+Acesse:  
+https://www.gyan.dev/ffmpeg/builds/
+
+Baixe o arquivo **ffmpeg-release-essentials.zip** (latest release).
+
+Extraia para, por exemplo:
+
+```text
+C:\Tools\ffmpeg\
+```
+
+Adicione ao PATH do Windows:
+
+1. Abra **Variáveis de Ambiente**
+2. Edite a variável **Path**
+3. Adicione:
+
+```text
+C:\Tools\ffmpeg\bin
+```
+
+Teste:
+
+```bash
+ffmpeg -version
+```
+
+Se aparecer a versão, está funcionando.
 
 ---
 
-## ⚡ Funcionalidades principais
+## 🐧 Instalação no Linux (Debian/Ubuntu)
 
-* Baixar playlists inteiras
-* Baixar músicas individuais
-* Converter arquivos de áudio para MP3
-* Configurar pastas de download personalizadas
-
----
-
-## 🛠 Pré-requisitos
-
-* Python 3.12+
-* [yt-dlp](https://github.com/yt-dlp/yt-dlp/releases)
-* [ffmpeg](https://ffmpeg.org/download.html)
-
-> 🔹 No Windows: coloque os executáveis em pastas simples, ex.:
-> `C:\Tools\yt-dlp.exe` e `C:\Tools\ffmpeg\bin\ffmpeg.exe`
-
-> 🔹 No Linux: instale via terminal:
->
-> ```bash
-> sudo apt update && sudo apt install yt-dlp ffmpeg -y
-> ```
+```bash
+sudo apt update
+sudo apt install yt-dlp ffmpeg python3 -y
+```
 
 ---
 
-## 🖥 Instalação
-
-1. Clone ou baixe o repositório:
+## 📥 Baixando o projeto
 
 ```bash
 git clone https://github.com/omgiceey/IcyRIP.git
+cd IcyRIP
 ```
 
-2. Entre na pasta do projeto:
+Ou, se preferir, baixe o projeto em ZIP no GitHub.
+
+---
+
+## 🚀 Como usar
+
+### YouTube
 
 ```bash
-cd ICYRIP
+python ytb.py
 ```
 
-3. Instale dependências Python (se necessário):
+ou
 
 ```bash
-pip install -r requirements.txt
+python3 ytb.py
+```
+
+### SoundCloud
+
+```bash
+python sound.py
 ```
 
 ---
 
-## 🚀 Uso
+## 📂 Menu (YouTube)
 
-Execute o script no terminal:
-
-```bash
-python main.py   # Windows
-python3 main.py  # Linux
-```
-
-Siga o menu interativo para baixar ou converter suas músicas:
-
-```
+```text
 [1] Baixar Playlist
 [2] Baixar Música
 [3] Converter para MP3
 [0] Sair
 ```
 
-## 💡 Dicas
+---
 
-* Use nomes simples para pastas (sem espaços complicados)
-* Mantenha `yt-dlp` e `ffmpeg` atualizados
-* Separe pastas diferentes para playlists e músicas individuais
+## ⚠️ Observações
+
+Mantenha o yt-dlp atualizado:
+
+```bash
+pip install -U yt-dlp
+```
+
+Se o download finalizar mas não converter para MP3, verifique se o FFmpeg foi instalado e configurado corretamente no PATH.
 
 ---
 
-## 📌 Nota
+## 📤 GitHub rápido (opcional)
 
-O projeto foi criado com ajuda de IA, mas todos os ajustes foram feitos por mim.
-Espero de coração que gostem — já estava na hora de lançar aqui no GitHub! 😄
+Se você editou algo e quer subir para o repositório:
+
+```bash
+git add .
+git commit -m "Atualiza projeto"
+git push origin main
+```
+
+Se sua branch não for `main`, troque no último comando.
