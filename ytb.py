@@ -1,6 +1,7 @@
 import os
 import platform
 import subprocess
+import re
 import sys
 import time
 import shutil
@@ -10,6 +11,7 @@ CYAN = "\033[96m"
 RESET = "\033[0m"
 GREEN = "\033[92m"
 RED = "\033[91m"
+VERBOSE = False
 
 
 def limpar_tela():
@@ -30,6 +32,37 @@ def mostrar_header():
     )
     print(f"{CYAN}✦ ICYRIP | v1.6 ✦ By Icey — Powered by yt-dlp{RESET}")
     print(f"{CYAN}═══════════════════════════════════════════════{RESET}")
+
+
+def parse_progress(line):
+    # tenta padrões comuns do yt-dlp: percent, total, speed e ETA
+    m = re.search(r"(?P<pct>\d{1,3}(?:\.\d+)?)%.*?of\s+(?P<total>[\d\.]+[KMGT]?i?B).*?at\s+(?P<speed>[\d\.]+[KMGT]?i?B/s).*?ETA\s+(?P<eta>\S+)", line)
+    if m:
+        return m.groupdict()
+    m = re.search(r"(?P<pct>\d{1,3}(?:\.\d+)?)%.*?at\s+(?P<speed>[\d\.]+[KMGT]?i?B/s).*?ETA\s+(?P<eta>\S+)", line)
+    if m:
+        return {'pct': m.group('pct'), 'speed': m.group('speed'), 'eta': m.group('eta')}
+    # padrão do ffmpeg (time/bitrate/speed)
+    m = re.search(r"time=(?P<time>\S+).*?bitrate=\s*(?P<bitrate>\S+).*?speed=\s*(?P<speed>\S+)", line)
+    if m:
+        return {'time': m.group('time'), 'bitrate': m.group('bitrate'), 'speed': m.group('speed')}
+    return None
+
+
+def render_progress_line(pct, total=None, speed=None, eta=None, color=CYAN, width=30):
+    try:
+        p = float(pct)
+    except Exception:
+        p = None
+    if p is None:
+        return f"{color}{pct}{RESET}"
+
+    filled = int((p / 100.0) * width)
+    bar = '[' + '#' * filled + '-' * (width - filled) + ']'
+    parts = [bar, f"{p:.0f}%"]
+    if speed:
+        parts.append(f"{speed}")
+    return f"{color}{' '.join(parts)}{RESET}"
 
 
 def configurar_pasta():
@@ -114,11 +147,43 @@ def configurar_dependencias():
 
 def executar_comando(comando, mensagem_erro):
     try:
-        proc = subprocess.run(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if proc.returncode == 0:
+        p = subprocess.Popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+        pct = None
+        pattern = re.compile(r"(?P<pct>\d{1,3}(?:\.\d)?)%")
+        other_lines = []
+        for line in p.stdout:
+            line = line.rstrip('\n')
+            prog = parse_progress(line)
+            if prog and 'pct' in prog:
+                pct = prog.get('pct')
+                speed = prog.get('speed')
+                line_out = render_progress_line(pct, speed=speed, color=CYAN)
+                sys.stdout.write(f"\r{line_out}")
+                sys.stdout.flush()
+            elif prog and 'time' in prog:
+                # ffmpeg-like short info when available
+                t = prog.get('time')
+                sp = prog.get('speed')
+                if VERBOSE:
+                    sys.stdout.write(f"\r{CYAN}time={t} speed={sp}{RESET}")
+                    sys.stdout.flush()
+            else:
+                if VERBOSE:
+                    print(line)
+                else:
+                    other_lines.append(line)
+        p.wait()
+        if pct is not None:
+            print()
+        if p.returncode == 0:
+            # clear progress line
+            if pct is not None:
+                print()
             return True
         else:
-            print(f"{RED}{mensagem_erro}\n{proc.stderr}{RESET}")
+            print(f"{RED}{mensagem_erro}{RESET}")
+            if other_lines:
+                print('\n'.join(other_lines))
             return False
     except FileNotFoundError:
         print(f"{RED}Comando não encontrado: {comando[0]}{RESET}")
