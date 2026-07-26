@@ -1184,20 +1184,24 @@ def check_update_async(current_version: str, repo: str = "icey/icyrip"):
                 cfg = _cfg.load_config()
             except Exception:
                 cfg = {}
-            if should_skip_patch_alert(current_version, patch_tag, cfg):
+
+            normalized_tag = normalize_patch_tag(patch_tag)
+            applied = get_applied_patches(cfg)
+            if normalized_tag in applied:
                 mark_patch_as_applied(patch_tag, cfg)
+                with _UPDATE_LOCK:
+                    for key in ["patch_tag", "patch_url", "patch_body"]:
+                        _UPDATE_CACHE.pop(key, None)
                 return
 
             url = f"https://api.github.com/repos/{repo}/releases/tags/{patch_tag}"
             req = urllib.request.Request(url, headers={"User-Agent": "ICYRIP"})
             with urllib.request.urlopen(req, timeout=4) as r:
                 data = _json.loads(r.read())
-            applied = get_applied_patches(cfg)
-            if patch_tag not in applied:
-                with _UPDATE_LOCK:
-                    _UPDATE_CACHE["patch_tag"]  = patch_tag
-                    _UPDATE_CACHE["patch_url"]  = data.get("html_url", "")
-                    _UPDATE_CACHE["patch_body"] = data.get("body", "").strip()
+            with _UPDATE_LOCK:
+                _UPDATE_CACHE["patch_tag"]  = patch_tag
+                _UPDATE_CACHE["patch_url"]  = data.get("html_url", "")
+                _UPDATE_CACHE["patch_body"] = data.get("body", "").strip()
         except Exception:
             pass
 

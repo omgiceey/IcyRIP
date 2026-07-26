@@ -1148,11 +1148,14 @@ def _hub_loop():
         yt_ok = bool(shutil.which("yt-dlp") or cfg.get("yt_dlp_path"))
         ff_ok = bool(shutil.which("ffmpeg") or cfg.get("ffmpeg_path"))
 
-        from core.utils import get_update_info
+        from core.utils import get_update_info, should_skip_patch_alert
         _upd = get_update_info()
         _upd_latest = _upd.get("latest", "")
         _upd_str = f"  ⚠ v{_upd_latest} disponível" if _upd_latest and _upd_latest != VERSION else ""
-        _patch_str = f"  🔧 patch disponível" if _upd.get("patch_tag") else ""
+        patch_tag = f"patch-{VERSION}"
+        _patch_str = ""
+        if _upd.get("patch_tag") and not should_skip_patch_alert(VERSION, patch_tag, cfg):
+            _patch_str = f"  🔧 patch disponível"
 
         w = _compact_w()
         dep_text = "deps ok" if (yt_ok and ff_ok) else "deps faltando"
