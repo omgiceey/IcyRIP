@@ -38,6 +38,15 @@ No Linux/macOS geralmente já vem instalado. Verifique com:
 python3 --version
 ```
 
+**Windows:**  
+Baixe em [python.org/downloads](https://www.python.org/downloads/) e instale.  
+> **Importante:** durante a instalação, marque a opção **"Add Python to PATH"** antes de clicar em Install Now. Sem isso o comando `python` não vai funcionar no terminal.
+
+Verifique:
+```powershell
+python --version
+```
+
 ### Git
 
 O Git é necessário para clonar o repositório e usar a atualização automática do HUB.
@@ -370,6 +379,7 @@ python main.py
 - Se o ffmpeg não for encontrado, informe o caminho no HUB → Dependências: `/data/data/com.termux/files/usr/bin/ffmpeg`
 - A atualização automática (`[6]` no HUB) funciona normalmente no Termux se instalou via `git clone`
 - Notificações nativas não funcionam no Termux — o aviso de conclusão de download não será exibido
+- **Não é necessário criar a pasta `tools/` no Termux** — instale as dependências normalmente via `pkg` como mostrado acima e o ICYRIP as detecta automaticamente
 
 ---
 
