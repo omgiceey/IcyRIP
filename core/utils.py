@@ -1102,6 +1102,19 @@ def normalize_patch_tag(tag: Optional[str]) -> str:
     return value
 
 
+def normalize_version_tag(tag: Optional[str]) -> str:
+    value = normalize_patch_tag(tag)
+    if not value:
+        return ""
+    if value.lower().startswith("v"):
+        value = value[1:]
+    if value.lower().startswith("patch-"):
+        value = value[len("patch-"):]
+    if value.lower().startswith("release-"):
+        value = value[len("release-"):]
+    return value.lstrip("v")
+
+
 def get_applied_patches(cfg: Optional[Dict[str, Any]] = None) -> List[str]:
     if isinstance(cfg, dict):
         applied = cfg.get("applied_patches", [])
@@ -1168,7 +1181,7 @@ def check_update_async(current_version: str, repo: str = "icey/icyrip"):
             req = urllib.request.Request(url, headers={"User-Agent": "ICYRIP"})
             with urllib.request.urlopen(req, timeout=4) as r:
                 data = _json.loads(r.read())
-            latest = data.get("tag_name", "").lstrip("v")
+            latest = normalize_version_tag(data.get("tag_name", ""))
             with _UPDATE_LOCK:
                 _UPDATE_CACHE["latest"] = latest
                 _UPDATE_CACHE["has_update"] = latest != current_version and bool(latest)

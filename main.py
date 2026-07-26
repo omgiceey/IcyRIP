@@ -1150,7 +1150,7 @@ def _hub_loop():
 
         from core.utils import get_update_info, should_skip_patch_alert
         _upd = get_update_info()
-        _upd_latest = _upd.get("latest", "")
+        _upd_latest = utils.normalize_version_tag(_upd.get("latest", ""))
         _upd_str = f"  ⚠ v{_upd_latest} disponível" if _upd_latest and _upd_latest != VERSION else ""
         patch_tag = f"patch-{VERSION}"
         _patch_str = ""

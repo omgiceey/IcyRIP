@@ -30,6 +30,11 @@ class PatchStateTests(unittest.TestCase):
         self.assertNotIn("patch_url", utils._UPDATE_CACHE)
         self.assertNotIn("patch_body", utils._UPDATE_CACHE)
 
+    def test_normalizes_patch_tags_as_versions(self):
+        self.assertEqual(utils.normalize_version_tag("vpatch-2.1.1"), "2.1.1")
+        self.assertEqual(utils.normalize_version_tag("patch-2.1.1"), "2.1.1")
+        self.assertEqual(utils.normalize_version_tag("v2.1.1"), "2.1.1")
+
     @patch("core.config.save_config", return_value=True)
     def test_mark_patch_saves_tag_to_config(self, _save_config):
         cfg = {"applied_patches": []}
