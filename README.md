@@ -266,6 +266,8 @@ python main.py
 **Dicas:**
 - Rode `termux-setup-storage` uma vez para acessar o armazenamento externo
 - Se o ffmpeg não for encontrado, informe o caminho no HUB → Dependências: `/data/data/com.termux/files/usr/bin/ffmpeg`
+- A atualização automática (`[6]` no HUB) funciona normalmente no Termux se instalou via `git clone`
+- Notificações nativas não funcionam no Termux — o aviso de conclusão de download não será exibido
 
 ---
 
@@ -277,6 +279,7 @@ python main.py
 | `ffmpeg não encontrado` | Instale via apt/brew/winget ou configure o caminho |
 | Erro 403 / bloqueado | Atualize o yt-dlp: `pipx upgrade yt-dlp` |
 | Vídeo bloqueado por idade | Configure cookies do browser no HUB → Dependências |
+| Faixa do Spotify não encontrada | O yt-dlp busca no YouTube Music — se não achar, a faixa pode não estar disponível lá. Tente atualizar o yt-dlp |
 | Barra de progresso sem cor | Terminal não suporta truecolor — defina `COLORTERM=truecolor` |
 | Menu desalinhado | Use um terminal com suporte a Unicode e fonte monospace |
 | Box não redimensiona | Redimensione a janela e pressione Enter |
