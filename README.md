@@ -399,4 +399,8 @@ python main.py
 
 ---
 
+## Nota de reinstalação
+
+Em casos de conflito entre o script e o sistema (arquivos corrompidos ou comportamento inesperado), recomendo reinstalar: remova a pasta do projeto e clone novamente, ou baixe o ZIP da release e reinstale as dependências com `pip install -r requirements.txt`.
+
 Projeto desenvolvido com apoio da IA. Tmj. 🎵
