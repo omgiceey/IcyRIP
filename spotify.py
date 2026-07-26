@@ -57,8 +57,9 @@ def _G():
 
 
 def _validar_url_sp(url: str) -> bool:
+    from core.i18n import t
     if "spotify.com" not in url.lower():
-        print(f"{colors.WARN}  ⚠  URL inválida: este módulo aceita apenas links do Spotify.{RST}")
+        print(f"{colors.WARN}  {t('url_invalid_sp')}{RST}")
         return False
     return True
 

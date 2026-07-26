@@ -385,6 +385,72 @@ def menu_presets():
             break
 
 
+def _verificar_update():
+    C, R = colors.CYAN, colors.RESET
+    cfg = cfgmod.load_config()
+    limpar_tela()
+    mostrar_banner(cfg)
+
+    from core.utils import with_spinner, get_update_info
+    import urllib.request, json as _json, shutil as _sh
+
+    print(f"\n{C}  {t('update_checking')}{R}")
+
+    info = {}
+    def _fetch():
+        try:
+            url = "https://api.github.com/repos/omgiceey/IcyRIP/releases/latest"
+            req = urllib.request.Request(url, headers={"User-Agent": "ICYRIP"})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = _json.loads(resp.read())
+            info["latest"] = data.get("tag_name", "").lstrip("v")
+            info["url"]    = data.get("html_url", "")
+        except Exception as e:
+            info["error"] = str(e)
+
+    with_spinner(t('update_checking'), _fetch, C)
+
+    if info.get("error") or not info.get("latest"):
+        print(f"{colors.ERROR}  {t('update_fail')}{R}")
+        _pausar()
+        return
+
+    latest = info["latest"]
+    if latest == VERSION:
+        print(f"{colors.SUCCESS}  {t('update_none')}{R}")
+        _pausar()
+        return
+
+    print(f"{colors.SUCCESS}  {t('update_found', version=latest)}{R}")
+    print(f"  {colors.DIM}{info['url']}{R}")
+
+    if not _confirmar(t('update_confirm', version=latest)):
+        _pausar()
+        return
+
+    if not _sh.which("git"):
+        print(f"{colors.ERROR}  {t('update_no_git')}{R}")
+        _pausar()
+        return
+
+    print(f"\n{C}  {t('update_applying')}{R}")
+    result = {}
+    def _pull():
+        import subprocess as _sp
+        r = _sp.run(["git", "pull", "origin", "main"],
+                    stdout=_sp.PIPE, stderr=_sp.STDOUT, text=True)
+        result["ok"] = r.returncode == 0
+        result["out"] = r.stdout.strip()
+
+    with_spinner(t('update_applying'), _pull, C)
+
+    if result.get("ok"):
+        print(f"{colors.SUCCESS}  {t('update_ok', version=latest)}{R}")
+    else:
+        print(f"{colors.ERROR}  {t('update_err', err=result.get('out', '?'))}{R}")
+    _pausar()
+
+
 def configure_dependencies_hub():
     cfg = cfgmod.load_config()
     limpar_tela()
@@ -833,6 +899,8 @@ def menu_configuracoes():
         if c == "1":
             cfg["language"] = escolher_idioma()
             cfgmod.save_config(cfg)
+            from core.i18n import _invalidate_lang_cache
+            _invalidate_lang_cache()
             print(f"{colors.SUCCESS}  {t('lang_saved', lang=cfg['language'])}{R}")
             _pausar()
 
@@ -954,12 +1022,13 @@ def _hub_loop():
         )
         print(_compact_row("1", f"🎵  {t('opt_youtube')}",    t('desc_youtube'),    colors.RED,    w))
         print(_compact_row("2", f"🔊  {t('opt_soundcloud')}", t('desc_soundcloud'), colors.ORANGE, w))
-        print(_compact_row("3", f"🟢  Spotify",               "baixar do Spotify",  colors.to_ansi("#1DB954"), w))
+        print(_compact_row("3", f"🟢  {t('opt_spotify')}",          t('desc_spotify'),   colors.to_ansi("#1DB954"), w))
         print(_compact_line(w))
         print(_compact_row("4", f"⚙️   {t('opt_settings')}",  t('desc_settings'),   C,             w))
         print(_compact_row("5", f"🔧  {t('opt_deps')}",       t('desc_deps'),       C,             w))
+        print(_compact_row("6", f"🔄  {t('opt_update')}",     t('desc_update'),     C,             w))
         print(_compact_line(w))
-        print(_compact_row("0", f"✕   {t('opt_exit')}",       "encerra o ICYRIP",   colors.DIM,    w))
+        print(_compact_row("0", f"✕   {t('opt_exit')}",       t('opt_exit').strip(), colors.DIM,   w))
 
 
         _compact_status([
@@ -1013,6 +1082,8 @@ def _hub_loop():
             menu_configuracoes()
         elif opc == "5":
             configure_dependencies_hub()
+        elif opc == "6":
+            _verificar_update()
         elif opc == "0":
             limpar_tela()
             cfg = cfgmod.load_config()
