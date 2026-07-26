@@ -434,13 +434,16 @@ def _verificar_update():
         return
 
     latest = info["latest"]
+    current_c = colors.DIM
+    latest_c  = colors.SUCCESS if latest != VERSION else colors.SUCCESS
+    arrow     = f"{colors.DIM}→{colors.RESET}"
     if latest == VERSION:
-        print(f"{colors.SUCCESS}  {t('update_none')}{R}")
+        print(f"\n  {current_c}v{VERSION}{colors.RESET}  {arrow}  {colors.SUCCESS}v{latest}  ✔  {t('update_none')}{colors.RESET}")
         _pausar()
         return
 
-    print(f"{colors.SUCCESS}  {t('update_found', version=latest)}{R}")
-    print(f"  {colors.DIM}{info['url']}{R}")
+    print(f"\n  {colors.DIM}v{VERSION}{colors.RESET}  {arrow}  {colors.SUCCESS}v{latest}  ⚠  {t('update_found', version=latest)}{colors.RESET}")
+    print(f"  {colors.DIM}{info['url']}{colors.RESET}")
 
     if not _confirmar(t('update_confirm', version=latest)):
         _pausar()
@@ -1128,7 +1131,7 @@ def main_menu():
     _utils.VERBOSE = cfg.get("verbose", False)
 
     from core.utils import check_update_async
-    check_update_async(VERSION, "icey-dev/icyrip")
+    check_update_async(VERSION, "omgiceey/IcyRIP")
 
     limpar_tela()
     cfg = cfgmod.load_config()
