@@ -48,12 +48,23 @@ winget install yt-dlp ffmpeg
 
 ## Instalação
 
+### Via Git (recomendado — permite atualização automática)
+
 ```bash
-git clone https://github.com/icey-dev/icyrip.git
-cd icyrip
+git clone https://github.com/omgiceey/IcyRIP.git
+cd IcyRIP
 pip install -r requirements.txt
 python main.py
 ```
+
+### Via ZIP
+
+1. Baixe o ZIP em [github.com/omgiceey/IcyRIP/releases/latest](https://github.com/omgiceey/IcyRIP/releases/latest)
+2. Extraia e entre na pasta
+3. `pip install -r requirements.txt`
+4. `python main.py`
+
+> **Atenção:** quem instala por ZIP não pode usar a atualização automática do HUB. Para atualizar, baixe o ZIP da nova versão e substitua os arquivos.
 
 ---
 
@@ -123,7 +134,7 @@ python spotify.py   # Spotify direto
 - **Histórico de downloads** — últimos 50 downloads com timestamp, módulo e nome
 - **Fila persistente** — adicione URLs à fila e processe depois
 - **Notificações nativas** — aviso ao concluir downloads (Linux/macOS/Windows)
-- **Verificação de update** — checa nova versão em background ao iniciar
+- **Verificação de update** — checa nova versão em background ao iniciar; HUB → `[6]` mostra a versão disponível e atualiza via `git pull` (requer instalação por Git)
 
 ---
 
@@ -232,8 +243,8 @@ pip install yt-dlp
 **3.** Clone e rode:
 
 ```bash
-git clone https://github.com/icey-dev/icyrip.git
-cd icyrip
+git clone https://github.com/omgiceey/IcyRIP.git
+cd IcyRIP
 python main.py
 ```
 
