@@ -33,6 +33,7 @@ def default_config() -> dict:
         "cookies_browser": None,
         "profiles": {},
         "notifications": True,
+        "applied_patches": [],
     }
 
 

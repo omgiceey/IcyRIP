@@ -390,6 +390,14 @@ def _verificar_patch(version: str):
     import urllib.request, json as _json, shutil as _sh
     from core.utils import with_spinner, get_update_info
 
+    cfg = cfgmod.load_config()
+    patch_tag = f"patch-{version}"
+    if utils.should_skip_patch_alert(version, patch_tag, cfg):
+        utils.mark_patch_as_applied(patch_tag, cfg)
+        print(f"\n  {colors.SUCCESS}  ✔ Nenhum patch necessário para v{version}.{R}")
+        _pausar()
+        return
+
     cached = get_update_info()
     info = {}
 
@@ -452,11 +460,7 @@ def _verificar_patch(version: str):
         try:
             patch_tag = info["tag"]
             cfg = cfgmod.load_config()
-            applied = cfg.get("applied_patches", [])
-            if patch_tag not in applied:
-                applied.append(patch_tag)
-            cfg["applied_patches"] = applied
-            cfgmod.save_config(cfg)
+            utils.mark_patch_as_applied(patch_tag, cfg)
         except Exception:
             pass
         print(f"{colors.SUCCESS}  ✔ Patch aplicado! Reiniciando...{R}")

@@ -1086,6 +1086,49 @@ def notify(title: str, body: str = ""):
 _UPDATE_CACHE: dict = {}
 _UPDATE_LOCK = threading.Lock()
 
+
+def get_applied_patches(cfg: Optional[Dict[str, Any]] = None) -> List[str]:
+    if isinstance(cfg, dict):
+        applied = cfg.get("applied_patches", [])
+    else:
+        try:
+            from core import config as _cfg
+            applied = _cfg.load_config().get("applied_patches", [])
+        except Exception:
+            applied = []
+    if not isinstance(applied, list):
+        return []
+    return [str(item) for item in applied if str(item)]
+
+
+def mark_patch_as_applied(patch_tag: str, cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    if not patch_tag:
+        return cfg or {}
+    try:
+        from core import config as _cfg
+        cfg = cfg if isinstance(cfg, dict) else _cfg.load_config()
+    except Exception:
+        cfg = {} if not isinstance(cfg, dict) else cfg
+
+    applied = get_applied_patches(cfg)
+    if patch_tag not in applied:
+        applied.append(patch_tag)
+        cfg["applied_patches"] = applied
+        try:
+            from core import config as _cfg
+            _cfg.save_config(cfg)
+        except Exception:
+            pass
+    return cfg
+
+
+def should_skip_patch_alert(current_version: str, patch_tag: Optional[str] = None, cfg: Optional[Dict[str, Any]] = None) -> bool:
+    if not current_version:
+        return False
+    tag = patch_tag or f"patch-{current_version}"
+    return tag in get_applied_patches(cfg)
+
+
 def check_update_async(current_version: str, repo: str = "icey/icyrip"):
     def _check():
         try:
@@ -1106,15 +1149,20 @@ def check_update_async(current_version: str, repo: str = "icey/icyrip"):
         try:
             import urllib.request, json as _json
             patch_tag = f"patch-{current_version}"
+            try:
+                from core import config as _cfg
+                cfg = _cfg.load_config()
+            except Exception:
+                cfg = {}
+            if should_skip_patch_alert(current_version, patch_tag, cfg):
+                mark_patch_as_applied(patch_tag, cfg)
+                return
+
             url = f"https://api.github.com/repos/{repo}/releases/tags/{patch_tag}"
             req = urllib.request.Request(url, headers={"User-Agent": "ICYRIP"})
             with urllib.request.urlopen(req, timeout=4) as r:
                 data = _json.loads(r.read())
-            try:
-                from core import config as _cfg
-                applied = _cfg.load_config().get("applied_patches", [])
-            except Exception:
-                applied = []
+            applied = get_applied_patches(cfg)
             if patch_tag not in applied:
                 with _UPDATE_LOCK:
                     _UPDATE_CACHE["patch_tag"]  = patch_tag
