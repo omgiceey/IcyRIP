@@ -394,6 +394,22 @@ def _verificar_update():
     from core.utils import with_spinner, get_update_info
     import urllib.request, json as _json, shutil as _sh
 
+    w = _compact_w()
+    _compact_header(f"🔄  {t('opt_update').strip()}", f"v{VERSION}", w)
+    print(_compact_row("1", f"🔍  {t('update_checking').strip()}", "github releases", C, w))
+    print(_compact_row("s", f"💬  {t('update_support')}", t('update_support_url'), C, w))
+    print(_compact_row("0", f"←   {t('opt_back').strip()}", "hub", colors.DIM, w))
+    print(_compact_line(w))
+
+    opc = input(f"\n{C}  ❥ {R}").strip().lower()
+    if opc == "s":
+        print(f"\n  {C}{t('update_support_msg')}{R}")
+        print(f"  {colors.HEADER}{t('update_support_url')}{R}")
+        _pausar()
+        return
+    if opc != "1":
+        return
+
     print(f"\n{C}  {t('update_checking')}{R}")
 
     info = {}
