@@ -1214,6 +1214,20 @@ def should_skip_patch_alert(current_version: str, patch_tag: Optional[str] = Non
     return False
 
 
+def should_prefer_patch_update(current_version: str, update_info: Optional[Dict[str, Any]] = None, cfg: Optional[Dict[str, Any]] = None) -> bool:
+    if not current_version:
+        return False
+    patch_tag = update_info.get("patch_tag") if isinstance(update_info, dict) else None
+    if not patch_tag:
+        return False
+    tag = normalize_patch_tag(patch_tag)
+    if not tag:
+        return False
+    if should_skip_patch_alert(current_version, tag, cfg):
+        return False
+    return True
+
+
 def check_update_async(current_version: str, repo: str = "icey/icyrip"):
     def _check():
         try:

@@ -1150,12 +1150,16 @@ def _hub_loop():
 
         from core.utils import get_update_info, should_skip_patch_alert
         _upd = get_update_info()
-        _upd_latest = utils.normalize_version_tag(_upd.get("latest", ""))
-        _upd_str = f"  ⚠ v{_upd_latest} disponível" if _upd_latest and utils.is_update_available(VERSION, _upd_latest) else ""
         patch_tag = f"patch-{VERSION}"
         _patch_str = ""
         if _upd.get("patch_tag") and not should_skip_patch_alert(VERSION, patch_tag, cfg):
             _patch_str = f"  🔧 patch disponível"
+
+        _upd_latest = utils.normalize_version_tag(_upd.get("latest", ""))
+        _upd_str = ""
+        if _upd_latest and utils.is_update_available(VERSION, _upd_latest):
+            if not utils.should_prefer_patch_update(VERSION, _upd, cfg):
+                _upd_str = f"  ⚠ v{_upd_latest} disponível"
 
         w = _compact_w()
         dep_text = "deps ok" if (yt_ok and ff_ok) else "deps faltando"

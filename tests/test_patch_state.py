@@ -40,6 +40,11 @@ class PatchStateTests(unittest.TestCase):
         self.assertFalse(utils.is_update_available("2.1.10", "2.1.2"))
         self.assertFalse(utils.is_update_available("v2.1.1", "2.1.1"))
 
+    def test_patch_update_takes_priority_when_pending(self):
+        cfg = {"applied_patches": []}
+        info = {"patch_tag": "patch-2.1.1", "patch_url": "https://example.test/patch"}
+        self.assertTrue(utils.should_prefer_patch_update("2.1.1", info, cfg))
+
     @patch("core.config.save_config", return_value=True)
     def test_mark_patch_saves_tag_to_config(self, _save_config):
         cfg = {"applied_patches": []}
