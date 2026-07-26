@@ -528,6 +528,15 @@ def _verificar_update():
     current_c = colors.DIM
     latest_c  = colors.SUCCESS if utils.is_update_available(VERSION, latest) else colors.SUCCESS
     arrow     = f"{colors.DIM}→{colors.RESET}"
+
+    patch_tag = f"patch-{VERSION}"
+    patch_pending = bool(get_update_info().get("patch_tag") and not utils.should_skip_patch_alert(VERSION, patch_tag, cfg))
+
+    if patch_pending:
+        print(f"\n  {colors.WARN}{t('patch_available')}{colors.RESET}")
+        print(f"  {colors.DIM}{t('patch_use_option')}{colors.RESET}")
+        print()
+
     if not utils.is_update_available(VERSION, latest):
         print(f"\n  {current_c}v{VERSION}{colors.RESET}  {arrow}  {colors.SUCCESS}v{latest}  ✔  {t('update_none')}{colors.RESET}")
         _pausar()
