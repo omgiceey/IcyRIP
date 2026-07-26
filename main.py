@@ -56,7 +56,7 @@ def limpar_tela():
         if os.name == "nt":
             os.system("cls")
         else:
-            sys.stdout.write("\033[2J\033[H")
+            sys.stdout.write("\033[2J\033[3J\033[H")
             sys.stdout.flush()
     except Exception:
         try:

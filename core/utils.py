@@ -655,7 +655,10 @@ def center_text(text: str) -> str:
         width = shutil.get_terminal_size((80, 20)).columns
     except Exception:
         width = 80
-    return "\n".join(line.center(width) for line in text.splitlines())
+    lines = text.splitlines()
+    max_len = max((len(l) for l in lines), default=0)
+    pad = max(0, (width - max_len) // 2)
+    return "\n".join(" " * pad + line for line in lines)
 
 
 def prompt_input(label: str, color: str = "", icon: str = "▶") -> str:
