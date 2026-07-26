@@ -23,26 +23,98 @@
 - Python 3.10+
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 - [ffmpeg](https://ffmpeg.org/) + ffprobe
+- [Git](https://git-scm.com/) *(opcional, necessário para atualização automática)*
+
+---
+
+## Instalando as dependências
+
+### Python
+
+Baixe em [python.org/downloads](https://www.python.org/downloads/) e instale normalmente.  
+No Linux/macOS geralmente já vem instalado. Verifique com:
 
 ```bash
+python3 --version
+```
+
+### Git
+
+O Git é necessário para clonar o repositório e usar a atualização automática do HUB.
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt install git
+```
+
+**macOS:**
+```bash
+brew install git
+```
+
+**Windows:**  
+Baixe em [git-scm.com/download/win](https://git-scm.com/download/win) e instale.  
+Ou via winget:
+```powershell
+winget install Git.Git
+```
+
+Verifique:
+```bash
+git --version
+```
+
+### yt-dlp
+
+**Linux/macOS (recomendado):**
+```bash
+pipx install yt-dlp
+```
+
+Ou via pip:
+```bash
+pip install yt-dlp
+```
+
+**Windows:**
+```powershell
+winget install yt-dlp
+```
+
+Ou baixe o executável direto em [github.com/yt-dlp/yt-dlp/releases/latest](https://github.com/yt-dlp/yt-dlp/releases/latest) (`yt-dlp.exe`).
+
+Verifique:
+```bash
 yt-dlp --version
+```
+
+### ffmpeg
+
+O ffmpeg é obrigatório para converter e processar o áudio/vídeo.
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt install ffmpeg
+```
+
+**macOS:**
+```bash
+brew install ffmpeg
+```
+
+**Windows:**
+```powershell
+winget install ffmpeg
+```
+
+Ou baixe os binários em [ffmpeg.org/download.html](https://ffmpeg.org/download.html) (builds para Windows em [gyan.dev/ffmpeg/builds](https://www.gyan.dev/ffmpeg/builds/)).
+
+Verifique:
+```bash
 ffmpeg -version
 ```
 
-### Linux / macOS
-
-```bash
-sudo apt install ffmpeg        # Debian/Ubuntu
-brew install ffmpeg            # macOS
-
-pipx install yt-dlp            # recomendado
-```
-
-### Windows
-
-```powershell
-winget install yt-dlp ffmpeg
-```
+> **Não consegue instalar globalmente?** Veja a seção [Pasta tools/](#pasta-tools) abaixo — você pode colocar os executáveis direto na pasta do ICYRIP.
 
 ---
 
@@ -75,6 +147,35 @@ python main.py      # HUB principal (recomendado)
 python ytb.py       # YouTube direto
 python sound.py     # SoundCloud direto
 python spotify.py   # Spotify direto
+```
+
+---
+
+## Pasta tools/
+
+A pasta `tools/` é a forma **recomendada** de fornecer o `yt-dlp` e o `ffmpeg` para o ICYRIP, especialmente se você não tem permissão para instalar programas globalmente no sistema (sem admin, Termux, ambiente restrito, etc.).
+
+> **Por que é recomendado?** Colocando os executáveis em `tools/`, o ICYRIP os detecta automaticamente sem precisar configurar nada. Não depende do PATH do sistema, não quebra com atualizações do SO, e funciona igual em qualquer ambiente.
+
+Crie a pasta `tools/` dentro da pasta do ICYRIP e coloque os executáveis lá:
+
+```
+IcyRIP/
+└── tools/
+    ├── yt-dlp          (ou yt-dlp.exe no Windows)
+    └── ffmpeg          (ou ffmpeg.exe no Windows)
+```
+
+Depois vá em **HUB → `[5]` Dependências → `[7]` Pasta tools/** — o ICYRIP vai escanear a pasta automaticamente e salvar os caminhos na configuração.
+
+**Como baixar os executáveis:**
+
+- **yt-dlp:** [github.com/yt-dlp/yt-dlp/releases/latest](https://github.com/yt-dlp/yt-dlp/releases/latest) → baixe `yt-dlp` (Linux/macOS) ou `yt-dlp.exe` (Windows)
+- **ffmpeg:** [gyan.dev/ffmpeg/builds](https://www.gyan.dev/ffmpeg/builds/) (Windows) ou [ffmpeg.org/download.html](https://ffmpeg.org/download.html)
+
+No Linux/macOS, dê permissão de execução após baixar:
+```bash
+chmod +x tools/yt-dlp tools/ffmpeg
 ```
 
 ---
@@ -130,7 +231,7 @@ python spotify.py   # Spotify direto
 | `[2]` SoundCloud | Abre o módulo SoundCloud |
 | `[3]` Spotify | Abre o módulo Spotify |
 | `[4]` Configurações | Idioma, temas, cores, fila, perfis, histórico, estatísticas |
-| `[5]` Dependências | Caminhos de yt-dlp/ffmpeg, cookies, atualizar yt-dlp |
+| `[5]` Dependências | Caminhos de yt-dlp/ffmpeg, cookies, pasta tools/, atualizar yt-dlp |
 | `[6]` Verificar atualização | Checa nova versão e atualiza via `git pull` (requer Git) |
 
 > Quem instalou por ZIP não pode usar a atualização automática do `[6]`. Baixe o ZIP da nova versão em [releases](https://github.com/omgiceey/IcyRIP/releases/latest) e substitua os arquivos.
@@ -230,6 +331,7 @@ icyrip/
 ├── spotify.py       Módulo Spotify
 ├── requirements.txt
 ├── LICENSE
+├── tools/           (opcional) coloque yt-dlp e ffmpeg aqui se não instalou globalmente
 ├── core/
 │   ├── colors.py    Sistema de cores, presets, gradientes
 │   ├── config.py    Leitura/escrita de configuração
@@ -275,9 +377,10 @@ python main.py
 
 | Problema | Solução |
 |----------|---------|
-| `yt-dlp não encontrado` | Configure o caminho no HUB → Dependências |
-| `ffmpeg não encontrado` | Instale via apt/brew/winget ou configure o caminho |
-| Erro 403 / bloqueado | Atualize o yt-dlp: `pipx upgrade yt-dlp` |
+| `yt-dlp não encontrado` | Instale com `pip install yt-dlp` ou coloque o executável em `tools/` |
+| `ffmpeg não encontrado` | Instale via apt/brew/winget ou coloque o executável em `tools/` |
+| Configurei o caminho mas não funciona | Certifique-se de apontar para o **executável**, não para a pasta. Ex: `/usr/bin/ffmpeg` |
+| Erro 403 / bloqueado | Atualize o yt-dlp: `pipx upgrade yt-dlp` ou HUB → Dependências → `[4]` |
 | Vídeo bloqueado por idade | Configure cookies do browser no HUB → Dependências |
 | Faixa do Spotify não encontrada | O yt-dlp busca no YouTube Music — se não achar, a faixa pode não estar disponível lá. Tente atualizar o yt-dlp |
 | Barra de progresso sem cor | Terminal não suporta truecolor — defina `COLORTERM=truecolor` |

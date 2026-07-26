@@ -385,6 +385,78 @@ def menu_presets():
             break
 
 
+def _verificar_patch(version: str):
+    C, R = colors.CYAN, colors.RESET
+    import urllib.request, json as _json, shutil as _sh
+    from core.utils import with_spinner, get_update_info
+
+    cached = get_update_info()
+    info = {}
+
+    def _fetch():
+        try:
+            patch_tag = f"patch-{version}"
+            url = f"https://api.github.com/repos/omgiceey/IcyRIP/releases/tags/{patch_tag}"
+            req = urllib.request.Request(url, headers={"User-Agent": "ICYRIP"})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = _json.loads(resp.read())
+            info["tag"]  = data.get("tag_name", "")
+            info["url"]  = data.get("html_url", "")
+            info["body"] = data.get("body", "").strip()
+        except Exception as e:
+            info["error"] = str(e)
+
+    if cached.get("patch_tag"):
+        info["tag"]  = cached["patch_tag"]
+        info["url"]  = cached.get("patch_url", "")
+        info["body"] = cached.get("patch_body", "")
+    else:
+        with_spinner("Verificando patch...", _fetch, C)
+
+    if info.get("error") or not info.get("tag"):
+        print(f"\n  {colors.SUCCESS}  ✔ Nenhum patch disponível para v{version}.{R}")
+        _pausar()
+        return
+
+    w = _compact_w()
+    print(f"\n  {colors.WARN}🔧  Patch de correção disponível: {info['tag']}{R}")
+    print(f"  {colors.DIM}{info['url']}{R}")
+
+    if info.get("body"):
+        print(f"\n  {colors.HEADER}Correções:{R}")
+        for line in info["body"].splitlines():
+            print(f"  {colors.DIM}{line}{R}")
+        print()
+
+    if not _confirmar("  Aplicar patch agora? (git pull)"):
+        _pausar()
+        return
+
+    if not _sh.which("git"):
+        print(f"{colors.ERROR}  {t('update_no_git')}{R}")
+        _pausar()
+        return
+
+    print(f"\n{C}  Aplicando patch...{R}")
+    result = {}
+    def _pull():
+        import subprocess as _sp
+        r = _sp.run(["git", "pull", "origin", "main"],
+                    stdout=_sp.PIPE, stderr=_sp.STDOUT, text=True)
+        result["ok"]  = r.returncode == 0
+        result["out"] = r.stdout.strip()
+
+    with_spinner("Aplicando patch...", _pull, C)
+
+    if result.get("ok"):
+        print(f"{colors.SUCCESS}  ✔ Patch aplicado! Reiniciando...{R}")
+        time.sleep(0.8)
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+    else:
+        print(f"{colors.ERROR}  {t('update_err', err=result.get('out', '?'))}{R}")
+    _pausar()
+
+
 def _verificar_update():
     C, R = colors.CYAN, colors.RESET
     cfg = cfgmod.load_config()
@@ -397,6 +469,7 @@ def _verificar_update():
     w = _compact_w()
     _compact_header(f"🔄  {t('opt_update').strip()}", f"v{VERSION}", w)
     print(_compact_row("1", f"🔍  {t('update_checking').strip()}", "github releases", C, w))
+    print(_compact_row("2", f"🔧  Verificar patch de correção", f"patch-{VERSION}", C, w))
     print(_compact_row("s", f"💬  {t('update_support')}", t('update_support_url'), C, w))
     print(_compact_row("0", f"←   {t('opt_back').strip()}", "hub", colors.DIM, w))
     print(_compact_line(w))
@@ -406,6 +479,9 @@ def _verificar_update():
         print(f"\n  {C}{t('update_support_msg')}{R}")
         print(f"  {colors.HEADER}{t('update_support_url')}{R}")
         _pausar()
+        return
+    if opc == "2":
+        _verificar_patch(VERSION)
         return
     if opc != "1":
         return
@@ -488,14 +564,9 @@ def configure_dependencies_hub():
     limpar_tela()
     mostrar_banner(cfg)
 
-    found_yt = shutil.which("yt-dlp") or shutil.which(cfg.get("yt_dlp_path") or "")
-    found_ff = shutil.which("ffmpeg") or shutil.which(cfg.get("ffmpeg_path") or "")
-    if not found_yt and cfg.get("yt_dlp_path"):
-        p = Path(cfg["yt_dlp_path"]).expanduser()
-        found_yt = str(p) if p.is_file() else None
-    if not found_ff and cfg.get("ffmpeg_path"):
-        p = Path(cfg["ffmpeg_path"]).expanduser()
-        found_ff = str(p) if p.is_file() else None
+    from core.utils import _resolve_executable
+    found_yt = _resolve_executable(cfg.get("yt_dlp_path"), "yt-dlp")
+    found_ff = _resolve_executable(cfg.get("ffmpeg_path"), "ffmpeg")
 
     def _ver(cmd):
         try:
@@ -530,6 +601,9 @@ def configure_dependencies_hub():
     restrict_atual = cfg.get("restrict_filenames", False)
     restrict_label = "ON" if restrict_atual else "off"
     print(_compact_row("6", t('deps_restrict'), f"{restrict_label} / {t('deps_restrict_desc')}", C, w))
+    tools_dir = Path("tools")
+    tools_label = f"tools/ ({', '.join(f.name for f in tools_dir.iterdir() if f.is_file())}" + ")" if tools_dir.is_dir() else "tools/ (criar pasta)"
+    print(_compact_row("7", "📁  Pasta tools/", tools_label, C, w))
     print(_compact_row("0", t('opt_back'), "hub", colors.DIM, w))
     print(_compact_line(w))
 
@@ -584,6 +658,26 @@ def configure_dependencies_hub():
         cfgmod.save_config(cfg)
         estado = f"{colors.SUCCESS}ON{R}" if cfg["restrict_filenames"] else f"{colors.DIM}off{R}"
         print(f"{colors.SUCCESS}  {t('deps_restrict_saved', state=estado)}{R}")
+    elif opt == "7":
+        tools_dir = Path("tools")
+        tools_dir.mkdir(exist_ok=True)
+        yt_names = ["yt-dlp", "yt-dlp.exe"]
+        ff_names = ["ffmpeg", "ffmpeg.exe"]
+        found_yt_t = next((str(tools_dir / n) for n in yt_names if (tools_dir / n).is_file()), None)
+        found_ff_t = next((str(tools_dir / n) for n in ff_names if (tools_dir / n).is_file()), None)
+        if found_yt_t:
+            cfg["yt_dlp_path"] = found_yt_t
+            print(f"{colors.SUCCESS}  ✔ yt-dlp encontrado: {found_yt_t}{R}")
+        else:
+            print(f"{colors.WARN}  yt-dlp não encontrado em tools/ — coloque o executável lá{R}")
+        if found_ff_t:
+            cfg["ffmpeg_path"] = found_ff_t
+            print(f"{colors.SUCCESS}  ✔ ffmpeg encontrado: {found_ff_t}{R}")
+        else:
+            print(f"{colors.WARN}  ffmpeg não encontrado em tools/ — coloque o executável lá{R}")
+        if found_yt_t or found_ff_t:
+            cfgmod.save_config(cfg)
+        print(f"\n{colors.DIM}  Pasta: {tools_dir.resolve()}{R}")
     _pausar()
 
 
@@ -1044,13 +1138,14 @@ def _hub_loop():
         _upd = get_update_info()
         _upd_latest = _upd.get("latest", "")
         _upd_str = f"  ⚠ v{_upd_latest} disponível" if _upd_latest and _upd_latest != VERSION else ""
+        _patch_str = f"  🔧 patch disponível" if _upd.get("patch_tag") else ""
 
         w = _compact_w()
         dep_text = "deps ok" if (yt_ok and ff_ok) else "deps faltando"
 
         _compact_header(
             f"✦  ICYRIP v{VERSION}  ·  HUB  ✦",
-            f"by Icey  ·  preset: {preset_atual}{_upd_str}",
+            f"by Icey  ·  preset: {preset_atual}{_upd_str}{_patch_str}",
             w,
         )
         print(_compact_row("1", f"🎵  {t('opt_youtube')}",    t('desc_youtube'),    colors.RED,    w))

@@ -367,6 +367,30 @@ def validar_dependencia(comando: List[str], nome: str) -> bool:
     return False
 
 
+def _resolve_executable(cfg_path: Optional[str], name: str) -> Optional[str]:
+    if cfg_path:
+        p = Path(cfg_path).expanduser()
+        if p.is_file() and os.access(str(p), os.X_OK):
+            return str(p)
+        if p.is_dir():
+            cand = p / name
+            if cand.is_file() and os.access(str(cand), os.X_OK):
+                return str(cand)
+        found = shutil.which(name, path=str(p.parent) if p.is_file() else str(p))
+        if found:
+            return found
+    tools_dir = Path.cwd() / "tools"
+    if tools_dir.is_dir():
+        cand = tools_dir / name
+        if cand.is_file() and os.access(str(cand), os.X_OK):
+            return str(cand)
+        for ext in (".exe", ""):
+            cand2 = tools_dir / (name + ext)
+            if cand2.is_file() and os.access(str(cand2), os.X_OK):
+                return str(cand2)
+    return shutil.which(name)
+
+
 def configurar_dependencias() -> Tuple[Optional[str], Optional[str]]:
     try:
         from core import config as _cfg
@@ -374,8 +398,8 @@ def configurar_dependencias() -> Tuple[Optional[str], Optional[str]]:
     except Exception:
         cfg = {}
 
-    yt_dlp_path = cfg.get("yt_dlp_path") or shutil.which("yt-dlp")
-    ffmpeg_path = cfg.get("ffmpeg_path") or shutil.which("ffmpeg")
+    yt_dlp_path = _resolve_executable(cfg.get("yt_dlp_path"), "yt-dlp")
+    ffmpeg_path = _resolve_executable(cfg.get("ffmpeg_path"), "ffmpeg")
 
     faltando = []
     if not yt_dlp_path or not validar_dependencia([yt_dlp_path, "--version"], "yt-dlp"):
@@ -386,7 +410,7 @@ def configurar_dependencias() -> Tuple[Optional[str], Optional[str]]:
     if faltando:
         nomes = ", ".join(faltando)
         print(f"\n  \033[38;2;255;80;80m✗{RST}  Dependência(s) não encontrada(s): {BOLD}{nomes}{RST}")
-        print(f"  {DIM}Configure em HUB → [4] Dependências antes de baixar.{RST}")
+        print(f"  {DIM}Configure em HUB → [5] Dependências antes de baixar.{RST}")
         return None, None
 
     return yt_dlp_path, ffmpeg_path
@@ -1066,6 +1090,7 @@ def check_update_async(current_version: str, repo: str = "icey/icyrip"):
     def _check():
         try:
             import urllib.request, json as _json
+
             url = f"https://api.github.com/repos/{repo}/releases/latest"
             req = urllib.request.Request(url, headers={"User-Agent": "ICYRIP"})
             with urllib.request.urlopen(req, timeout=4) as r:
@@ -1077,6 +1102,21 @@ def check_update_async(current_version: str, repo: str = "icey/icyrip"):
                 _UPDATE_CACHE["url"] = data.get("html_url", "")
         except Exception:
             pass
+
+        try:
+            import urllib.request, json as _json
+            patch_tag = f"patch-{current_version}"
+            url = f"https://api.github.com/repos/{repo}/releases/tags/{patch_tag}"
+            req = urllib.request.Request(url, headers={"User-Agent": "ICYRIP"})
+            with urllib.request.urlopen(req, timeout=4) as r:
+                data = _json.loads(r.read())
+            with _UPDATE_LOCK:
+                _UPDATE_CACHE["patch_tag"]  = patch_tag
+                _UPDATE_CACHE["patch_url"]  = data.get("html_url", "")
+                _UPDATE_CACHE["patch_body"] = data.get("body", "").strip()
+        except Exception:
+            pass
+
     threading.Thread(target=_check, daemon=True).start()
 
 
