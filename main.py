@@ -449,6 +449,16 @@ def _verificar_patch(version: str):
     with_spinner("Aplicando patch...", _pull, C)
 
     if result.get("ok"):
+        try:
+            patch_tag = info["tag"]
+            cfg = cfgmod.load_config()
+            applied = cfg.get("applied_patches", [])
+            if patch_tag not in applied:
+                applied.append(patch_tag)
+            cfg["applied_patches"] = applied
+            cfgmod.save_config(cfg)
+        except Exception:
+            pass
         print(f"{colors.SUCCESS}  ✔ Patch aplicado! Reiniciando...{R}")
         time.sleep(0.8)
         os.execv(sys.executable, [sys.executable] + sys.argv)

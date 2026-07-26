@@ -1110,10 +1110,16 @@ def check_update_async(current_version: str, repo: str = "icey/icyrip"):
             req = urllib.request.Request(url, headers={"User-Agent": "ICYRIP"})
             with urllib.request.urlopen(req, timeout=4) as r:
                 data = _json.loads(r.read())
-            with _UPDATE_LOCK:
-                _UPDATE_CACHE["patch_tag"]  = patch_tag
-                _UPDATE_CACHE["patch_url"]  = data.get("html_url", "")
-                _UPDATE_CACHE["patch_body"] = data.get("body", "").strip()
+            try:
+                from core import config as _cfg
+                applied = _cfg.load_config().get("applied_patches", [])
+            except Exception:
+                applied = []
+            if patch_tag not in applied:
+                with _UPDATE_LOCK:
+                    _UPDATE_CACHE["patch_tag"]  = patch_tag
+                    _UPDATE_CACHE["patch_url"]  = data.get("html_url", "")
+                    _UPDATE_CACHE["patch_body"] = data.get("body", "").strip()
         except Exception:
             pass
 
