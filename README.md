@@ -122,6 +122,21 @@ python spotify.py   # Spotify direto
 
 ---
 
+## HUB
+
+| Opção | Descrição |
+|-------|-----------|
+| `[1]` YouTube | Abre o módulo YouTube |
+| `[2]` SoundCloud | Abre o módulo SoundCloud |
+| `[3]` Spotify | Abre o módulo Spotify |
+| `[4]` Configurações | Idioma, temas, cores, fila, perfis, histórico, estatísticas |
+| `[5]` Dependências | Caminhos de yt-dlp/ffmpeg, cookies, atualizar yt-dlp |
+| `[6]` Verificar atualização | Checa nova versão e atualiza via `git pull` (requer Git) |
+
+> Quem instalou por ZIP não pode usar a atualização automática do `[6]`. Baixe o ZIP da nova versão em [releases](https://github.com/omgiceey/IcyRIP/releases/latest) e substitua os arquivos.
+
+---
+
 ## Interface
 
 - **Banner animado** — aparece linha por linha com gradiente de cores ao entrar em cada módulo
