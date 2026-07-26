@@ -17,7 +17,7 @@ import core.config as cfgmod
 from core.i18n import t
 
 
-VERSION = "2.1"
+VERSION = "2.1.1"
 
 ASCII = r"""
 ░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓█▓▒░▒▓███████▓▒░
