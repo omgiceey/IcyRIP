@@ -529,6 +529,21 @@ def executar_comando(
                 sys.stdout.flush()
             if "ERROR:" in line or ("error" in line.lower() and "[download]" in line):
                 _errors += 1
+                if not VERBOSE:
+                    _hints = [
+                        ("unable to extract",         "Faixa não encontrada no YouTube Music."),
+                        ("no video formats found",    "Faixa não encontrada no YouTube Music."),
+                        ("this video is unavailable", "Vídeo indisponível no YouTube Music."),
+                        ("video unavailable",         "Vídeo indisponível no YouTube Music."),
+                        ("sign in to confirm",        "Bloqueado por verificação de idade — configure cookies no HUB → Dependências."),
+                        ("private video",             "Vídeo privado — não é possível baixar."),
+                        ("members-only",              "Conteúdo exclusivo para membros."),
+                    ]
+                    for pattern, hint in _hints:
+                        if pattern in line.lower():
+                            sys.stdout.write(f"  \033[38;2;255;80;80m✗{RST}  {hint}\n")
+                            sys.stdout.flush()
+                            break
 
         p.wait()
 
