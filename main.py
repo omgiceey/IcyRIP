@@ -1035,7 +1035,8 @@ def _hub_loop():
 
         from core.utils import get_update_info
         _upd = get_update_info()
-        _upd_str = f"  ⚠ v{_upd['latest']} disponível" if _upd.get("has_update") and _upd.get("latest") and _upd["latest"] != VERSION else ""
+        _upd_latest = _upd.get("latest", "")
+        _upd_str = f"  ⚠ v{_upd_latest} disponível" if _upd_latest and _upd_latest != VERSION else ""
 
         w = _compact_w()
         dep_text = "deps ok" if (yt_ok and ff_ok) else "deps faltando"
