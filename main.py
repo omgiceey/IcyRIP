@@ -412,6 +412,8 @@ def _verificar_update():
 
     if info.get("error") or not info.get("latest"):
         print(f"{colors.ERROR}  {t('update_fail')}{R}")
+        if info.get("error"):
+            print(f"{colors.DIM}  {info['error']}{R}")
         _pausar()
         return
 
