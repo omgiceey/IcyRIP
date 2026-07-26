@@ -526,9 +526,9 @@ def _verificar_update():
 
     latest = info["latest"]
     current_c = colors.DIM
-    latest_c  = colors.SUCCESS if latest != VERSION else colors.SUCCESS
+    latest_c  = colors.SUCCESS if utils.is_update_available(VERSION, latest) else colors.SUCCESS
     arrow     = f"{colors.DIM}→{colors.RESET}"
-    if latest == VERSION:
+    if not utils.is_update_available(VERSION, latest):
         print(f"\n  {current_c}v{VERSION}{colors.RESET}  {arrow}  {colors.SUCCESS}v{latest}  ✔  {t('update_none')}{colors.RESET}")
         _pausar()
         return
@@ -1151,7 +1151,7 @@ def _hub_loop():
         from core.utils import get_update_info, should_skip_patch_alert
         _upd = get_update_info()
         _upd_latest = utils.normalize_version_tag(_upd.get("latest", ""))
-        _upd_str = f"  ⚠ v{_upd_latest} disponível" if _upd_latest and _upd_latest != VERSION else ""
+        _upd_str = f"  ⚠ v{_upd_latest} disponível" if _upd_latest and utils.is_update_available(VERSION, _upd_latest) else ""
         patch_tag = f"patch-{VERSION}"
         _patch_str = ""
         if _upd.get("patch_tag") and not should_skip_patch_alert(VERSION, patch_tag, cfg):

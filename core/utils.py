@@ -1115,6 +1115,48 @@ def normalize_version_tag(tag: Optional[str]) -> str:
     return value.lstrip("v")
 
 
+def _version_key(version: Optional[str]) -> Tuple[int, ...]:
+    value = normalize_version_tag(version)
+    if not value:
+        return ()
+    parts = []
+    for token in re.split(r"[._-]", value):
+        if not token:
+            continue
+        match = re.match(r"^(\d+)([A-Za-z]+)?(\d*)$", token)
+        if match:
+            num = int(match.group(1))
+            suffix = (match.group(2) or "").lower()
+            suffix_num = int(match.group(3) or 0)
+            parts.extend([num, 0 if not suffix else 1, ord(suffix[0]) if suffix else 0, suffix_num])
+        else:
+            parts.append(token.lower())
+    return tuple(parts)
+
+
+def is_update_available(current_version: Optional[str], latest_version: Optional[str]) -> bool:
+    current = normalize_version_tag(current_version)
+    latest = normalize_version_tag(latest_version)
+    if not latest:
+        return False
+    if not current:
+        return True
+
+    current_key = _version_key(current)
+    latest_key = _version_key(latest)
+    if not current_key or not latest_key:
+        return latest != current
+
+    for left, right in zip(current_key, latest_key):
+        if left == right:
+            continue
+        if isinstance(left, int) and isinstance(right, int):
+            return left < right
+        return str(left) < str(right)
+
+    return len(current_key) < len(latest_key)
+
+
 def get_applied_patches(cfg: Optional[Dict[str, Any]] = None) -> List[str]:
     if isinstance(cfg, dict):
         applied = cfg.get("applied_patches", [])
@@ -1184,7 +1226,7 @@ def check_update_async(current_version: str, repo: str = "icey/icyrip"):
             latest = normalize_version_tag(data.get("tag_name", ""))
             with _UPDATE_LOCK:
                 _UPDATE_CACHE["latest"] = latest
-                _UPDATE_CACHE["has_update"] = latest != current_version and bool(latest)
+                _UPDATE_CACHE["has_update"] = is_update_available(current_version, latest)
                 _UPDATE_CACHE["url"] = data.get("html_url", "")
         except Exception:
             pass

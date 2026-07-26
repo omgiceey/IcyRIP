@@ -35,6 +35,11 @@ class PatchStateTests(unittest.TestCase):
         self.assertEqual(utils.normalize_version_tag("patch-2.1.1"), "2.1.1")
         self.assertEqual(utils.normalize_version_tag("v2.1.1"), "2.1.1")
 
+    def test_detects_newer_versions_semantically(self):
+        self.assertTrue(utils.is_update_available("2.1.2", "2.1.10"))
+        self.assertFalse(utils.is_update_available("2.1.10", "2.1.2"))
+        self.assertFalse(utils.is_update_available("v2.1.1", "2.1.1"))
+
     @patch("core.config.save_config", return_value=True)
     def test_mark_patch_saves_tag_to_config(self, _save_config):
         cfg = {"applied_patches": []}
