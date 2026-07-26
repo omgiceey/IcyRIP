@@ -421,6 +421,7 @@ def _verificar_update():
                 data = _json.loads(resp.read())
             info["latest"] = data.get("tag_name", "").lstrip("v")
             info["url"]    = data.get("html_url", "")
+            info["body"]   = data.get("body", "").strip()
         except Exception as e:
             info["error"] = str(e)
 
@@ -444,6 +445,12 @@ def _verificar_update():
 
     print(f"\n  {colors.DIM}v{VERSION}{colors.RESET}  {arrow}  {colors.SUCCESS}v{latest}  ⚠  {t('update_found', version=latest)}{colors.RESET}")
     print(f"  {colors.DIM}{info['url']}{colors.RESET}")
+
+    if info.get("body"):
+        print(f"\n  {colors.HEADER}Changelog:{colors.RESET}")
+        for line in info["body"].splitlines():
+            print(f"  {colors.DIM}{line}{colors.RESET}")
+        print()
 
     if not _confirmar(t('update_confirm', version=latest)):
         _pausar()
