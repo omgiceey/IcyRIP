@@ -1087,6 +1087,21 @@ _UPDATE_CACHE: dict = {}
 _UPDATE_LOCK = threading.Lock()
 
 
+def normalize_patch_tag(tag: Optional[str]) -> str:
+    if not tag:
+        return ""
+    value = str(tag).strip()
+    if not value:
+        return ""
+    if value.lower().startswith("vpatch-"):
+        value = value[1:]
+    elif value.lower().startswith("patch-"):
+        value = value
+    elif value.lower().startswith("v") and "patch-" in value.lower():
+        value = value[1:]
+    return value
+
+
 def get_applied_patches(cfg: Optional[Dict[str, Any]] = None) -> List[str]:
     if isinstance(cfg, dict):
         applied = cfg.get("applied_patches", [])
@@ -1098,7 +1113,12 @@ def get_applied_patches(cfg: Optional[Dict[str, Any]] = None) -> List[str]:
             applied = []
     if not isinstance(applied, list):
         return []
-    return [str(item) for item in applied if str(item)]
+    normalized = []
+    for item in applied:
+        tag = normalize_patch_tag(item)
+        if tag and tag not in normalized:
+            normalized.append(tag)
+    return normalized
 
 
 def mark_patch_as_applied(patch_tag: str, cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -1110,23 +1130,33 @@ def mark_patch_as_applied(patch_tag: str, cfg: Optional[Dict[str, Any]] = None) 
     except Exception:
         cfg = {} if not isinstance(cfg, dict) else cfg
 
+    normalized_tag = normalize_patch_tag(patch_tag)
     applied = get_applied_patches(cfg)
-    if patch_tag not in applied:
-        applied.append(patch_tag)
+    if normalized_tag not in applied:
+        applied.append(normalized_tag)
         cfg["applied_patches"] = applied
         try:
             from core import config as _cfg
             _cfg.save_config(cfg)
         except Exception:
             pass
+
+    with _UPDATE_LOCK:
+        for key in ["patch_tag", "patch_url", "patch_body"]:
+            _UPDATE_CACHE.pop(key, None)
     return cfg
 
 
 def should_skip_patch_alert(current_version: str, patch_tag: Optional[str] = None, cfg: Optional[Dict[str, Any]] = None) -> bool:
     if not current_version:
         return False
-    tag = patch_tag or f"patch-{current_version}"
-    return tag in get_applied_patches(cfg)
+    tag = normalize_patch_tag(patch_tag or f"patch-{current_version}")
+    if tag in get_applied_patches(cfg):
+        with _UPDATE_LOCK:
+            for key in ["patch_tag", "patch_url", "patch_body"]:
+                _UPDATE_CACHE.pop(key, None)
+        return True
+    return False
 
 
 def check_update_async(current_version: str, repo: str = "icey/icyrip"):
