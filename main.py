@@ -464,6 +464,10 @@ def _verificar_update():
 
     if result.get("ok"):
         print(f"{colors.SUCCESS}  {t('update_ok', version=latest)}{R}")
+        time.sleep(1)
+        print(f"{C}  Reiniciando...{R}")
+        time.sleep(0.8)
+        os.execv(sys.executable, [sys.executable] + sys.argv)
     else:
         print(f"{colors.ERROR}  {t('update_err', err=result.get('out', '?'))}{R}")
     _pausar()
