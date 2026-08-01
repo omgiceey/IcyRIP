@@ -1,4 +1,4 @@
-# ICYRIP v2.1
+# ICYRIP v2.2
 
 ```
 ░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓█▓▒░▒▓███████▓▒░
@@ -239,8 +239,8 @@ chmod +x tools/yt-dlp tools/ffmpeg
 | `[1]` YouTube | Abre o módulo YouTube |
 | `[2]` SoundCloud | Abre o módulo SoundCloud |
 | `[3]` Spotify | Abre o módulo Spotify |
-| `[4]` Configurações | Idioma, temas, cores, fila, perfis, histórico, estatísticas |
-| `[5]` Dependências | Caminhos de yt-dlp/ffmpeg, cookies, pasta tools/, atualizar yt-dlp |
+| `[4]` Configurações | Idioma, temas, cores, fila, perfis, histórico com filtro por módulo, estatísticas |
+| `[5]` Dependências | Caminhos de yt-dlp/ffmpeg com versão em destaque, cookies, pasta tools/, atualizar yt-dlp |
 | `[6]` Verificar atualização | Checa nova versão e atualiza via `git pull` (requer Git) |
 
 > Quem instalou por ZIP não pode usar a atualização automática do `[6]`. Baixe o ZIP da nova versão em [releases](https://github.com/omgiceey/IcyRIP/releases/latest) e substitua os arquivos.
@@ -256,8 +256,8 @@ chmod +x tools/yt-dlp tools/ffmpeg
 - **Spinner animado** — ao buscar metadados de playlists e durante conversões
 - **Prompt estilizado** — inputs com moldura `╭─ label / ╰▶`
 - **Resumo de playlist** — ao final mostra `✔ X concluídos · ✗ Y erros · ⏱ tempo total`
-- **Histórico de downloads** — últimos 50 downloads com timestamp, módulo e nome
-- **Fila persistente** — adicione URLs à fila e processe depois
+- **Histórico de downloads** — últimos 50 downloads com filtro por módulo (YouTube, Vídeo, Playlist, Álbum, SoundCloud)
+- **Fila persistente** — adicione URLs à fila e processe depois com contador `[N/total]` e título
 - **Notificações nativas** — aviso ao concluir downloads (Linux/macOS/Windows)
 - **Verificação de update** — checa nova versão em background ao iniciar; HUB → `[6]` mostra a versão disponível e atualiza via `git pull` (requer instalação por Git)
 
@@ -390,8 +390,11 @@ python main.py
 | `yt-dlp não encontrado` | Instale com `pip install yt-dlp` ou coloque o executável em `tools/` |
 | `ffmpeg não encontrado` | Instale via apt/brew/winget ou coloque o executável em `tools/` |
 | Configurei o caminho mas não funciona | Certifique-se de apontar para o **executável**, não para a pasta. Ex: `/usr/bin/ffmpeg` |
-| Erro 403 / bloqueado | Atualize o yt-dlp: `pipx upgrade yt-dlp` ou HUB → Dependências → `[4]` |
+| Erro 403 / bloqueado | Atualize o yt-dlp: `pipx upgrade yt-dlp` ou HUB → Dependências → `[4]`. Se persistir, configure cookies do browser |
+| Erro 429 (muitas requisições) | Aguarde alguns minutos antes de tentar novamente |
 | Vídeo bloqueado por idade | Configure cookies do browser no HUB → Dependências |
+| Conteúdo geo-bloqueado | Use cookies do browser ou VPN |
+| Formato indisponível | Tente outro formato de áudio/vídeo no menu de download |
 | Faixa do Spotify não encontrada | O yt-dlp busca no YouTube Music — se não achar, a faixa pode não estar disponível lá. Tente atualizar o yt-dlp |
 | Barra de progresso sem cor | Terminal não suporta truecolor — defina `COLORTERM=truecolor` |
 | Menu desalinhado | Use um terminal com suporte a Unicode e fonte monospace |
