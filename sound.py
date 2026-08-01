@@ -3,6 +3,7 @@ import time
 
 import core.colors as colors
 from core import utils
+from core.colors import apply_theme_to_module
 from core.utils import (
     configurar_dependencias,
     animate_banner_in,
@@ -17,20 +18,6 @@ from core.downloader import (
 )
 
 MODULO = "sound"
-
-
-def _apply_theme(cfg: dict):
-    from core.colors import PRESETS, to_ansi, DEFAULT_THEME
-    import core.colors as _c
-    import sys as _sys
-    mod = _sys.modules[_c.__name__]
-    preset_name = cfg.get("preset")
-    base = {k: v for k, v in PRESETS[preset_name].items() if not k.startswith("_")} \
-        if preset_name and preset_name in PRESETS else dict(DEFAULT_THEME)
-    merged = {**base, **(cfg.get("colors") or {})}
-    for role, h in merged.items():
-        if not role.startswith("_") and hasattr(mod, role):
-            setattr(mod, role, to_ansi(h))
 
 BANNER = r"""
  ██▓ ▄████▄▓██   ██▓  ██████  ▒█████   █    ██  ███▄    █ ▓█████▄
@@ -124,7 +111,8 @@ def menu(yt_dlp_path, ffmpeg_path):
     try:
         while True:
             from core import config as _cfgmod
-            _apply_theme(_cfgmod.load_config())
+            _cfg = _cfgmod.load_config()
+            apply_theme_to_module(_cfg)
             mostrar_header(animated=True)
             exibir_opcoes(save_path)
             opcao = input(f"\n{_O()}  ❯ {RST}").strip()

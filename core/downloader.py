@@ -81,7 +81,8 @@ def pausar(cor: str):
 
 
 def confirmar(pergunta: str, cor: str) -> bool:
-    return input(f"{cor}{pergunta} (s/n): {colors.RESET}").strip().lower().startswith("s")
+    from core.i18n import t
+    return input(f"{cor}{pergunta} {t('confirm_yn_dl')}: {colors.RESET}").strip().lower().startswith(t('yes_key_dl'))
 
 
 def _validar_url(url: str) -> bool:
@@ -384,9 +385,10 @@ def escolher_qualidade_video(cor: str) -> str:
 
 
 def perguntar_embutir_capa(cor: str, default=True) -> bool:
-    pad = "s" if default else "n"
-    resp = input(f"{cor}  Embutir capa no arquivo? (s/n) [padrão {pad}]: {colors.RESET}").strip().lower()
-    return resp.startswith("s") if resp else default
+    from core.i18n import t
+    pad = t('yes_key_dl') if default else "n"
+    resp = input(f"{cor}  {t('embed_cover').format(default=pad)}: {colors.RESET}").strip().lower()
+    return resp.startswith(t('yes_key_dl')) if resp else default
 
 
 def playlist_warning(yt_dlp_path, url, entries, cor: str, label="playlist") -> bool:
@@ -500,7 +502,8 @@ def _ler_urls_batch(cor: str) -> list[str]:
         return []
     p = Path(raw.strip()).expanduser()
     if p.suffix == ".txt" and p.is_file():
-        urls = [l.strip() for l in p.read_text(encoding="utf-8").splitlines() if l.strip()]
+        urls = [l.strip() for l in p.read_text(encoding="utf-8").splitlines()
+                if l.strip() and not l.strip().startswith("#")]
         print(f"{colors.SUCCESS}  ✔ {len(urls)} URLs carregadas de {p.name}{colors.RESET}")
         return urls
     return [u for u in re.split(r"[\s,]+", raw) if u.startswith("http")]
@@ -531,13 +534,12 @@ def baixar_musica(save_path, yt_dlp_path, ffmpeg_path, cor: str, validar_url=Non
         print(f"{colors.ERROR}  Nenhum link informado.{colors.RESET}"); pausar(cor); return
 
     total_ok = 0
-    for url in urls:
-        if not _validar_url(url):
-            continue
-        if validar_url and not validar_url(url):
-            continue
+    total_urls = [u for u in urls if _validar_url(u) and (not validar_url or validar_url(u))]
+    for i, url in enumerate(total_urls, 1):
+        if len(total_urls) > 1:
+            print(f"\n{cor}  [{i}/{len(total_urls)}]{colors.RESET}")
         _mostrar_preview(yt_dlp_path, url, cor)
-        if len(urls) > 1 and not confirmar(f"  Baixar este item?", cor):
+        if len(total_urls) > 1 and not confirmar(f"  Baixar este item?", cor):
             continue
         try:
             out = safe_join(save_path, "%(title)s.%(ext)s")
@@ -662,11 +664,12 @@ def baixar_video(save_path, yt_dlp_path, ffmpeg_path, cor: str):
     _, restrict = _cfg_download()
 
     total_ok = 0
-    for url in urls:
-        if not _validar_url(url):
-            continue
+    total_urls = [u for u in urls if _validar_url(u)]
+    for i, url in enumerate(total_urls, 1):
+        if len(total_urls) > 1:
+            print(f"\n{cor}  [{i}/{len(total_urls)}]{colors.RESET}")
         _mostrar_preview(yt_dlp_path, url, cor)
-        if len(urls) > 1 and not confirmar("  Baixar este item?", cor):
+        if len(total_urls) > 1 and not confirmar("  Baixar este item?", cor):
             continue
         try:
             out = safe_join(save_path, "%(title)s.%(ext)s")
@@ -814,6 +817,7 @@ def _enfileirar_url(cor: str, modulo: str, save_path: str):
             "formato":   formato,
             "qualidade": qualidade,
             "embutir":   embutir,
+            "titulo":    "",
         })
     q = load_queue()
     print(f"{colors.SUCCESS}  ✔ {len(urls)} item(s) adicionado(s). Fila: {len(q)} total.{colors.RESET}")
@@ -826,22 +830,27 @@ def processar_fila(yt_dlp_path: str, ffmpeg_path: str, cor: str):
         pausar(cor)
         return
 
-    print(f"\n{cor}  ▶ Processando fila — {len(q)} item(s){colors.RESET}")
+    total_fila = len(q)
+    print(f"\n{cor}  ▶ Processando fila — {total_fila} item(s){colors.RESET}")
     ok_total = err_total = 0
+    idx_fila = 0
 
     while True:
         item = dequeue()
         if not item:
             break
 
+        idx_fila += 1
         url       = item.get("url", "")
         modulo    = item.get("modulo", "musica")
         save_path = item.get("save_path", "")
         formato   = item.get("formato", "mp3")
         qualidade = item.get("qualidade", "0")
         embutir   = item.get("embutir", True)
+        titulo    = item.get("titulo", "")
 
-        print(f"\n{cor}  ▶ {url[:70]}{colors.RESET}")
+        label_item = titulo if titulo else url[:60]
+        print(f"\n{cor}  [{idx_fila}/{total_fila}]  {label_item}{colors.RESET}")
 
         postproc = build_postproc(embutir)
         _, restrict = _cfg_download()

@@ -562,6 +562,17 @@ def executar_comando(
                         ("sign in to confirm",        "Bloqueado por verificação de idade — configure cookies no HUB → Dependências."),
                         ("private video",             "Vídeo privado — não é possível baixar."),
                         ("members-only",              "Conteúdo exclusivo para membros."),
+                        ("geo",                       "Conteúdo bloqueado na sua região (geo-bloqueado)."),
+                        ("not available in your country", "Conteúdo indisponível no seu país."),
+                        ("copyright",                 "Removido por direitos autorais."),
+                        ("this content isn't available", "Conteúdo indisponível."),
+                        ("format is not available",   "Formato solicitado não disponível — tente outro formato."),
+                        ("requested format is not available", "Formato solicitado não disponível — tente outro formato."),
+                        ("no such format",            "Formato não encontrado — tente outro formato."),
+                        ("http error 429",            "Muitas requisições (429) — aguarde alguns minutos."),
+                        ("http error 403",            "Acesso negado (403) — tente com cookies configurados."),
+                        ("network",                   "Erro de rede — verifique sua conexão."),
+                        ("connection",                "Erro de conexão — verifique sua rede."),
                     ]
                     for pattern, hint in _hints:
                         if pattern in line.lower():

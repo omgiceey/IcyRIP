@@ -298,6 +298,17 @@ def _mod():
     return sys.modules[__name__]
 
 
+def apply_theme_to_module(cfg: dict):
+    preset_name = cfg.get("preset")
+    base = {k: v for k, v in PRESETS[preset_name].items() if not k.startswith("_")} \
+        if preset_name and preset_name in PRESETS else dict(DEFAULT_THEME)
+    merged = {**base, **(cfg.get("colors") or {})}
+    mod = _mod()
+    for role, h in merged.items():
+        if not role.startswith("_") and hasattr(mod, role):
+            setattr(mod, role, to_ansi(h))
+
+
 HEADER   = to_ansi(DEFAULT_THEME["HEADER"])
 ACCENT   = to_ansi(DEFAULT_THEME["ACCENT"])
 INFO     = to_ansi(DEFAULT_THEME["INFO"])

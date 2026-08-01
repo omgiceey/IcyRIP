@@ -17,7 +17,7 @@ import core.config as cfgmod
 from core.i18n import t
 
 
-VERSION = "2.1.1"
+VERSION = "2.2"
 
 ASCII = r"""
 ░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓█▓▒░▒▓███████▓▒░
@@ -525,9 +525,7 @@ def _verificar_update():
         return
 
     latest = info["latest"]
-    current_c = colors.DIM
-    latest_c  = colors.SUCCESS if utils.is_update_available(VERSION, latest) else colors.SUCCESS
-    arrow     = f"{colors.DIM}→{colors.RESET}"
+    arrow  = f"{colors.DIM}→{colors.RESET}"
 
     patch_tag = f"patch-{VERSION}"
     patch_pending = bool(get_update_info().get("patch_tag") and not utils.should_skip_patch_alert(VERSION, patch_tag, cfg))
@@ -538,7 +536,7 @@ def _verificar_update():
         print()
 
     if not utils.is_update_available(VERSION, latest):
-        print(f"\n  {current_c}v{VERSION}{colors.RESET}  {arrow}  {colors.SUCCESS}v{latest}  ✔  {t('update_none')}{colors.RESET}")
+        print(f"\n  {colors.DIM}v{VERSION}{colors.RESET}  {arrow}  {colors.SUCCESS}v{latest}  ✔  {t('update_none')}{colors.RESET}")
         _pausar()
         return
 
@@ -607,12 +605,8 @@ def configure_dependencies_hub():
     ff_c = colors.SUCCESS if found_ff else colors.ERROR
     w = _compact_w()
     _compact_header("DEPENDENCIAS", "yt-dlp / ffmpeg / cookies", w)
-    print(f"  {yt_c}yt-dlp{R} {colors.DIM}{found_yt or t('deps_not_found')}{R}")
-    if yt_ver:
-        print(f"  {colors.DIM}{_clip_visual(yt_ver, w)}{R}")
-    print(f"  {ff_c}ffmpeg{R} {colors.DIM}{found_ff or t('deps_not_found')}{R}")
-    if ff_ver:
-        print(f"  {colors.DIM}{_clip_visual(ff_ver, w)}{R}")
+    print(f"  {yt_c}yt-dlp  {colors.BOLD}{yt_ver or t('deps_not_found')}{R}  {colors.DIM}{found_yt or ''}{R}")
+    print(f"  {ff_c}ffmpeg  {colors.BOLD}{ff_ver.split()[2] if ff_ver and len(ff_ver.split()) > 2 else (ff_ver or t('deps_not_found'))}{R}  {colors.DIM}{found_ff or ''}{R}")
     print(_compact_line(w))
     print(_compact_row("1", t('deps_path_ytdlp'), "caminho manual do executavel", C, w))
     print(_compact_row("2", t('deps_path_ffmpeg'), "caminho manual do executavel", C, w))
@@ -824,7 +818,7 @@ def _customizar_ascii_banner(cfg: dict):
             return
         ascii_colors[modkey] = {"start": vals[0], "end": vals[1]}
         ascii_style[modkey] = "custom"
-    if op == "2":
+    elif op == "2":
         preset_list = list(colors.PRESETS.items())
         print()
         for i, (name, data) in enumerate(preset_list, 1):
@@ -860,7 +854,23 @@ def _mostrar_historico():
     limpar_tela()
     cfg = cfgmod.load_config()
     mostrar_banner(cfg)
+
+    _mod_opts = {
+        "1": "musica", "2": "video", "3": "playlist",
+        "4": "álbum", "5": "playlist / álbum",
+    }
+    w = _compact_w()
+    print(_compact_line(w))
+    print(f"  {colors.BOLD}{colors.gradient_text(t('history_filter_prompt'), *_box_colors()[2:])}{colors.RESET}")
+    print(f"  {C}[1]{R} YouTube  {C}[2]{R} Vídeo  {C}[3]{R} Playlist  {C}[4]{R} Álbum  {C}[5]{R} SC/Álbum  {C}[Enter]{R} {t('history_filter_all')}")
+    print(_compact_line(w))
+    filtro_raw = input(f"  {C}❯ {R}").strip()
+    filtro_mod = _mod_opts.get(filtro_raw)
+
     entries = load_history(50)
+    if filtro_mod:
+        entries = [e for e in entries if e["mod"] == filtro_mod]
+
     print(_box_top())
     hl2, *_ = _box_colors()
     print(f"  {hl2}│{R}  {colors.HEADER}{t('history_title')}  {colors.DIM}({t('history_last', n=len(entries))}){R}  {hl2}│{R}")
@@ -923,6 +933,9 @@ def _mostrar_historico():
                     else:
                         print(f"{colors.WARN}  Re-download não suportado para '{mod}'.{R}")
                         _pausar()
+            else:
+                print(f"{colors.WARN}  Número inválido.{R}")
+                _pausar()
         else:
             _pausar()
     else:
@@ -1170,12 +1183,14 @@ def _hub_loop():
             if not utils.should_prefer_patch_update(VERSION, _upd, cfg):
                 _upd_str = f"  ⚠ v{_upd_latest} disponível"
 
+        archive_on = cfg.get("use_archive", True)
+        archive_str = f"  archive: {'ON' if archive_on else 'off'}"
         w = _compact_w()
         dep_text = "deps ok" if (yt_ok and ff_ok) else "deps faltando"
 
         _compact_header(
             f"✦  ICYRIP v{VERSION}  ·  HUB  ✦",
-            f"by Icey  ·  preset: {preset_atual}{_upd_str}{_patch_str}",
+            f"by Icey  ·  preset: {preset_atual}{_upd_str}{_patch_str}{archive_str}",
             w,
         )
         print(_compact_row("1", f"🎵  {t('opt_youtube')}",    t('desc_youtube'),    colors.RED,    w))
