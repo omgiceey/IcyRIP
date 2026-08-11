@@ -451,6 +451,7 @@ def _verificar_patch(version: str):
     def _pull():
         import subprocess as _sp
         r = _sp.run(["git", "pull", "origin", "main"],
+                    cwd=Path(__file__).resolve().parent,
                     stdout=_sp.PIPE, stderr=_sp.STDOUT, text=True)
         result["ok"]  = r.returncode == 0
         result["out"] = r.stdout.strip()
@@ -564,6 +565,7 @@ def _verificar_update():
     def _pull():
         import subprocess as _sp
         r = _sp.run(["git", "pull", "origin", "main"],
+                    cwd=Path(__file__).resolve().parent,
                     stdout=_sp.PIPE, stderr=_sp.STDOUT, text=True)
         result["ok"] = r.returncode == 0
         result["out"] = r.stdout.strip()
