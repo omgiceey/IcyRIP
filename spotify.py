@@ -15,6 +15,7 @@ from core.downloader import (
     configurar_pasta, get_pasta_salva,
     baixar_musica, baixar_playlist, baixar_album,
     baixar_clipe, converter_para_audio,
+    abrir_pasta,
 )
 
 MODULO = "spotify"
@@ -24,16 +25,13 @@ _GREEN_END = "#1ed760"
 
 
 BANNER = r"""
- ________  ________  ________  _________  ___  ________ ___    ___
-|\   ____\|\   __  \|\   __  \|\___   ___\\  \|\  _____\\  \  /  /|
-\ \  \___|\ \  \|\  \ \  \|\  \|___ \  \_\ \  \ \  \__/\ \  \/  / /
- \ \_____  \ \   ____\ \  \\\  \   \ \  \ \ \  \ \   __\\ \    / /
-  \|____|\  \ \  \___|\ \  \\\  \   \ \  \ \ \  \ \  \_| \/   / /
-    ____\_\  \ \__\    \ \_______\   \ \__\ \ \__\ \__\__/   / /
-   |\_________\|__|     \|_______|    \|__|  \|__|\|__|\____/ /
-   \|_________|                                       \|____|/
-
-
+  ░██████   ░█████████    ░██████   ░██████████░██████░██████████░██     ░██ 
+ ░██   ░██  ░██     ░██  ░██   ░██      ░██      ░██  ░██         ░██   ░██  
+░██         ░██     ░██ ░██     ░██     ░██      ░██  ░██          ░██ ░██   
+ ░████████  ░█████████  ░██     ░██     ░██      ░██  ░█████████    ░████    
+        ░██ ░██         ░██     ░██     ░██      ░██  ░██            ░██     
+ ░██   ░██  ░██          ░██   ░██      ░██      ░██  ░██            ░██     
+  ░██████   ░██           ░██████       ░██    ░██████░██            ░██    
 """
 
 RST = colors.RESET
@@ -55,6 +53,10 @@ def _resolve_banner_colors():
     try:
         import core.config as _cfg
         cfg = _cfg.load_config()
+        if cfg.get("color_mode", "follow_preset") == "follow_app":
+            from core.colors import APP_COLORS
+            ac = APP_COLORS.get("spotify", {})
+            return ac["_banner_start"], ac["_banner_end"]
         raw = cfg.get("ascii_style", "follow_theme")
         style = raw.get("spotify", "follow_theme") if isinstance(raw, dict) else raw
         if style == "neon":    return "#00ff99", "#8a2be2"
@@ -81,7 +83,7 @@ def mostrar_header(animated: bool = False):
 
     _sep = sep(s_hex, e_hex)
     print(_sep)
-    print(f"{_G()}  ✦ ICYRIP Spotify v2.1  ·  By Icey  ·  Powered by yt-dlp  ✦{RST}")
+    print(f"{_G()}  ✦ ICYRIP Spotify v2.3  ·  By Icey  ·  Powered by yt-dlp  ✦{RST}")
     print(_sep)
 
 
@@ -96,6 +98,7 @@ def exibir_opcoes(save_path: str):
     print(compact_row("5", "🔄  Converter para áudio",      "converte arquivo local",        _G(),          tw))
     print(compact_line(tw))
     print(compact_row("6", "📁  Alterar pasta",             "muda destino dos downloads",    _G(),          tw))
+    print(compact_row("p", "📂  Abrir pasta",               "abre o explorador de arquivos", _G(),          tw))
     print(compact_row("f", "📌  Fila",                       "gerenciar fila de downloads",   _G(),          tw))
     print(compact_row("7", "←   Voltar ao HUB",             "menu principal",                colors.DIM, tw))
     print(compact_row("0", "✕   Sair",                       "encerrar",                      colors.DIM, tw))
@@ -119,7 +122,7 @@ def menu(yt_dlp_path, ffmpeg_path):
         while True:
             from core import config as _cfgmod
             _cfg = _cfgmod.load_config()
-            apply_theme_to_module(_cfg)
+            apply_theme_to_module(_cfg, MODULO)
             mostrar_header(animated=True)
             exibir_opcoes(save_path)
             opcao = input(f"\n{_G()}  ❯ {RST}").strip()
@@ -128,6 +131,8 @@ def menu(yt_dlp_path, ffmpeg_path):
                 acoes[opcao](save_path)
             elif opcao == "6":
                 save_path = configurar_pasta(MODULO, _G(), "Spotify")
+            elif opcao == "p":
+                abrir_pasta(save_path, _G())
             elif opcao == "f":
                 from core.downloader import menu_fila
                 menu_fila(yt_dlp_path, ffmpeg_path, _G(), save_path, "musica")

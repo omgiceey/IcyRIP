@@ -17,7 +17,7 @@ import core.config as cfgmod
 from core.i18n import t
 
 
-VERSION = "2.2"
+VERSION = "2.3"
 
 ASCII = r"""
 ░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓█▓▒░▒▓███████▓▒░
@@ -262,20 +262,9 @@ def mostrar_banner(cfg: dict, animated: bool = False):
 def apply_theme(_theme_name: str):
     try:
         cfg = cfgmod.load_config()
-        custom = cfg.get("colors") or {}
-        preset_name = cfg.get("preset")
     except (OSError, TypeError, KeyError):
-        custom = {}
-        preset_name = None
-
-    if preset_name and preset_name in colors.PRESETS:
-        base = {k: v for k, v in colors.PRESETS[preset_name].items() if not k.startswith("_")}
-    else:
-        base = dict(colors.DEFAULT_THEME)
-    merged = {**base, **custom}
-    for role, h in merged.items():
-        if not role.startswith("_") and hasattr(colors, role):
-            setattr(colors, role, colors.to_ansi(h))
+        cfg = {}
+    colors.apply_theme_to_module(cfg, "")
 
 
 def escolher_idioma() -> str:
@@ -381,7 +370,19 @@ def menu_presets():
             cfg = cfgmod.load_config()
             apply_theme(cfg.get("theme", "default"))
             print(f"{colors.SUCCESS}  ✔ Preset '{name}' aplicado!{R}")
+            print(f"\n{C}  Como os módulos devem usar as cores?{R}")
+            print(f"  {C}[1]{R}  Seguir preset em todos os módulos")
+            print(f"  {C}[2]{R}  Módulos usam cor do app  {colors.DIM}(YouTube=vermelho, Spotify=verde...){R}")
+            modo_opc = input(f"\n{C}  Escolha (Enter = 1): {R}").strip()
+            color_mode = "follow_app" if modo_opc == "2" else "follow_preset"
+            cfg["color_mode"] = color_mode
+            cfgmod.save_config(cfg)
+            modo_label = "follow_app" if color_mode == "follow_app" else "follow_preset"
+            print(f"{colors.SUCCESS}  ✔ Modo: {modo_label}{R}")
             time.sleep(1)
+            print(f"{C}  Reiniciando...{R}")
+            time.sleep(0.5)
+            os.execv(sys.executable, [sys.executable] + sys.argv)
             break
 
 
@@ -786,10 +787,10 @@ def _customizar_ascii_banner(cfg: dict):
     mostrar_banner(cfg)
     print(f"\n{C}  Banner ASCII — módulo:{R}")
     print(_sep())
-    print(f"{C}  [1]{R}  Hub  [2] YouTube  [3] SoundCloud  [4] Spotify  [0] Voltar")
+    print(f"{C}  [1]{R}  Hub  [2] YouTube  [3] SoundCloud  [4] Spotify  [5] Deezer  [0] Voltar")
     print(_sep())
     sel = input(f"{C}  Escolha: {R}").strip()
-    key_map = {"1": "main", "2": "ytb", "3": "sound", "4": "spotify"}
+    key_map = {"1": "main", "2": "ytb", "3": "sound", "4": "spotify", "5": "deezer"}
     modkey = key_map.get(sel)
     if not modkey:
         return
@@ -867,9 +868,13 @@ def _mostrar_historico():
     filtro_raw = input(f"  {C}❯ {R}").strip()
     filtro_mod = _mod_opts.get(filtro_raw)
 
+    busca = input(f"  {C}Buscar por nome (Enter = todos): {R}").strip().lower()
+
     entries = load_history(50)
     if filtro_mod:
         entries = [e for e in entries if e["mod"] == filtro_mod]
+    if busca:
+        entries = [e for e in entries if busca in e["name"].lower()]
 
     print(_box_top())
     hl2, *_ = _box_colors()
@@ -1015,6 +1020,16 @@ def menu_configuracoes():
         notif_label   = f"{colors.SUCCESS}ON{R}" if notif_atual else f"{colors.DIM}off{R}"
         archive_atual = cfg.get("use_archive", True)
         archive_label = f"{colors.SUCCESS}ON{R}" if archive_atual else f"{colors.DIM}off{R}"
+        organizar_atual = cfg.get("organizar_por_artista", False)
+        organizar_label = f"{colors.SUCCESS}ON{R}" if organizar_atual else f"{colors.DIM}off{R}"
+        integr_atual = cfg.get("verificar_integridade", True)
+        integr_label = f"{colors.SUCCESS}ON{R}" if integr_atual else f"{colors.DIM}off{R}"
+        retries_atual = cfg.get("max_retries", 3)
+        backoff_atual = cfg.get("retry_backoff", True)
+        backoff_label = f"{colors.SUCCESS}ON{R}" if backoff_atual else f"{colors.DIM}off{R}"
+        workers_atual = cfg.get("max_workers", 1)
+        color_mode_atual = cfg.get("color_mode", "follow_preset")
+        color_mode_label = f"{colors.SUCCESS}follow_app{R}" if color_mode_atual == "follow_app" else f"{colors.DIM}follow_preset{R}"
 
         w = _compact_w()
 
@@ -1028,13 +1043,18 @@ def menu_configuracoes():
         print(_compact_row("2", f"🎨  {t('opt_presets')}",       t('desc_presets'),                      C, w))
         print(_compact_row("3", f"🖥   {t('opt_custom_color')}", t('desc_custom_color'),                 C, w))
         print(_compact_row("4", f"🔤  {t('opt_ascii')}",         t('desc_ascii'),                        C, w))
+        print(_compact_row("m", f"🎭  Modo de cores",           f"[{color_mode_label}]",                  C, w))
         print(_compact_line(w))
 
         print(_compact_row("5", f"📊  {t('opt_pl_limit')}",      f"{t('cfg_limit')}: {thresh}",           C, w))
         print(_compact_row("6", f"🔎  {t('opt_verbose')}",       f"{t('desc_verbose')} [{verbose_label}]", C, w))
         print(_compact_row("n", f"🔔  Notificações",             f"notific. de conclusão [{notif_label}]", C, w))
         print(_compact_row("a", f"🗃   Retomar downloads",       f"download-archive [{archive_label}]",    C, w))
-        print(_compact_row("p", f"💾  Perfis",                   "gerenciar perfis de download",          C, w))
+        print(_compact_row("o", f"📂  Organizar por artista",    f"Artista/Álbum/Faixa [{organizar_label}]",        C, w))
+        print(_compact_row("i", f"🔍  Verificar integridade",    f"ffprobe pós-download [{integr_label}]",          C, w))
+        print(_compact_row("r", f"🔁  Retry com backoff",        f"tentativas: {retries_atual}  backoff: [{backoff_label}]", C, w))
+        print(_compact_row("w", f"⚡  Downloads paralelos",      f"workers: {workers_atual}  (1–6)",                    C, w))
+        print(_compact_row("p", f"💾  Perfis",                   "gerenciar perfis de download",                    C, w))
         print(_compact_line(w))
 
         print(_compact_row("q", f"📌  Fila",                     "fila persistente de downloads",        C, w))
@@ -1072,6 +1092,17 @@ def menu_configuracoes():
             customizar_cores()
         elif c == "4":
             _customizar_ascii_banner(cfgmod.load_config())
+
+        elif c == "m":
+            novo = "follow_app" if color_mode_atual == "follow_preset" else "follow_preset"
+            cfg["color_mode"] = novo
+            cfgmod.save_config(cfg)
+            label = f"{colors.SUCCESS}follow_app{R}" if novo == "follow_app" else f"{colors.DIM}follow_preset{R}"
+            print(f"{colors.SUCCESS}  ✔ Modo de cores: {label}{R}")
+            time.sleep(0.8)
+            print(f"{C}  Reiniciando...{R}")
+            time.sleep(0.5)
+            os.execv(sys.executable, [sys.executable] + sys.argv)
         elif c == "5":
             val = input(f"{C}  {t('pl_limit_prompt', cur=thresh)}: {R}").strip()
             if val:
@@ -1104,6 +1135,42 @@ def menu_configuracoes():
             cfgmod.save_config(cfg)
             estado = f"{colors.SUCCESS}ON{R}" if cfg["use_archive"] else f"{colors.DIM}off{R}"
             print(f"{colors.SUCCESS}  ✔ Retomar downloads: {estado}{R}")
+            _pausar()
+
+        elif c == "o":
+            cfg["organizar_por_artista"] = not cfg.get("organizar_por_artista", False)
+            cfgmod.save_config(cfg)
+            estado = f"{colors.SUCCESS}ON{R}" if cfg["organizar_por_artista"] else f"{colors.DIM}off{R}"
+            print(f"{colors.SUCCESS}  ✔ Organizar por artista: {estado}{R}")
+            _pausar()
+
+        elif c == "i":
+            cfg["verificar_integridade"] = not cfg.get("verificar_integridade", True)
+            cfgmod.save_config(cfg)
+            estado = f"{colors.SUCCESS}ON{R}" if cfg["verificar_integridade"] else f"{colors.DIM}off{R}"
+            print(f"{colors.SUCCESS}  ✔ Verificar integridade: {estado}{R}")
+            _pausar()
+
+        elif c == "r":
+            print(f"\n{C}  Tentativas atuais: {retries_atual}  Backoff: {backoff_label}{R}")
+            val = input(f"{C}  Novo número de tentativas (1-10, Enter = manter): {R}").strip()
+            if val.isdigit() and 1 <= int(val) <= 10:
+                cfg["max_retries"] = int(val)
+            cfg["retry_backoff"] = not cfg.get("retry_backoff", True)
+            cfgmod.save_config(cfg)
+            estado_b = f"{colors.SUCCESS}ON{R}" if cfg["retry_backoff"] else f"{colors.DIM}off{R}"
+            print(f"{colors.SUCCESS}  ✔ Tentativas: {cfg['max_retries']}  Backoff: {estado_b}{R}")
+            _pausar()
+
+        elif c == "w":
+            val = input(f"{C}  Workers paralelos (1-6, atual {workers_atual}): {R}").strip()
+            if val.isdigit() and 1 <= int(val) <= 6:
+                cfg["max_workers"] = int(val)
+                cfgmod.save_config(cfg)
+                modo = f"{colors.SUCCESS}{val} paralelo{'s' if int(val) > 1 else ''}{R}" if int(val) > 1 else f"{colors.DIM}sequencial{R}"
+                print(f"{colors.SUCCESS}  ✔ Downloads: {modo}{R}")
+            else:
+                print(f"{colors.WARN}  Valor inválido. Use 1–6.{R}")
             _pausar()
 
         elif c == "p":
@@ -1188,18 +1255,26 @@ def _hub_loop():
         w = _compact_w()
         dep_text = "deps ok" if (yt_ok and ff_ok) else "deps faltando"
 
+        from core.downloader import get_pasta_salva
+        pasta_ytb   = get_pasta_salva("ytb",     "Músicas")
+        pasta_sound = get_pasta_salva("sound",   "SoundCloud")
+        pasta_sp    = get_pasta_salva("spotify", "Spotify")
+        pasta_dz    = get_pasta_salva("deezer",  "Deezer")
+        pasta_str   = f"  pasta: {pasta_ytb}"
+
         _compact_header(
             f"✦  ICYRIP v{VERSION}  ·  HUB  ✦",
             f"by Icey  ·  preset: {preset_atual}{_upd_str}{_patch_str}{archive_str}",
             w,
         )
-        print(_compact_row("1", f"🎵  {t('opt_youtube')}",    t('desc_youtube'),    colors.RED,    w))
-        print(_compact_row("2", f"🔊  {t('opt_soundcloud')}", t('desc_soundcloud'), colors.ORANGE, w))
-        print(_compact_row("3", f"🟢  {t('opt_spotify')}",          t('desc_spotify'),   colors.to_ansi("#1DB954"), w))
+        print(_compact_row("1", f"🎵  {t('opt_youtube')}",    f"{t('desc_youtube')}  · {pasta_ytb[-28:]}",    colors.RED,    w))
+        print(_compact_row("2", f"🔊  {t('opt_soundcloud')}", f"{t('desc_soundcloud')}  · {pasta_sound[-28:]}", colors.ORANGE, w))
+        print(_compact_row("3", f"🟢  {t('opt_spotify')}",    f"{t('desc_spotify')}  · {pasta_sp[-28:]}",    colors.to_ansi("#1DB954"), w))
+        print(_compact_row("4", f"🟣  {t('opt_deezer')}",     f"{t('desc_deezer')}  · {pasta_dz[-28:]}",     colors.to_ansi("#a238ff"), w))
         print(_compact_line(w))
-        print(_compact_row("4", f"⚙️   {t('opt_settings')}",  t('desc_settings'),   C,             w))
-        print(_compact_row("5", f"🔧  {t('opt_deps')}",       t('desc_deps'),       C,             w))
-        print(_compact_row("6", f"🔄  {t('opt_update')}",     t('desc_update'),     C,             w))
+        print(_compact_row("5", f"⚙️   {t('opt_settings')}",  t('desc_settings'),   C,             w))
+        print(_compact_row("6", f"🔧  {t('opt_deps')}",       t('desc_deps'),       C,             w))
+        print(_compact_row("7", f"🔄  {t('opt_update')}",     t('desc_update'),     C,             w))
         print(_compact_line(w))
         print(_compact_row("0", f"✕   {t('opt_exit')}",       t('opt_exit').strip(), colors.DIM,   w))
 
@@ -1252,10 +1327,21 @@ def _hub_loop():
                     print(f"{colors.ERROR}  Erro ao importar módulo Spotify: {e}{R}")
                     _pausar()
         elif opc == "4":
-            menu_configuracoes()
+            from core.utils import configurar_dependencias
+            yt, ff = configurar_dependencias()
+            if yt and ff:
+                _transicao("Deezer", colors.to_ansi("#a238ff"))
+                try:
+                    import deezer
+                    deezer.menu(yt, ff)
+                except ImportError as e:
+                    print(f"{colors.ERROR}  Erro ao importar módulo Deezer: {e}{R}")
+                    _pausar()
         elif opc == "5":
-            configure_dependencies_hub()
+            menu_configuracoes()
         elif opc == "6":
+            configure_dependencies_hub()
+        elif opc == "7":
             _verificar_update()
         elif opc == "0":
             limpar_tela()

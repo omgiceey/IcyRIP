@@ -34,6 +34,12 @@ def default_config() -> dict:
         "profiles": {},
         "notifications": True,
         "applied_patches": [],
+        "organizar_por_artista": False,
+        "max_retries": 3,
+        "retry_backoff": True,
+        "verificar_integridade": True,
+        "max_workers": 1,
+        "color_mode": "follow_preset",
     }
 
 

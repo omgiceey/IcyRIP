@@ -243,7 +243,7 @@ def get_playlist_info(yt_dlp_path: str, url: str) -> Dict[str, Any]:
         entries = obj.get("entries") or []
         titles  = [e.get("title") or e.get("id") for e in entries]
         title   = obj.get("title") or obj.get("playlist_title")
-        return {"title": title, "entries": titles}
+        return {"title": title, "entries": titles, "entries_full": entries}
     except Exception:
         return {}
 

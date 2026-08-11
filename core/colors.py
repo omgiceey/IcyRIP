@@ -245,6 +245,27 @@ PRESETS: Dict[str, Dict[str, str]] = {
         "_banner_start": "#b2ff59", "_banner_end": "#eeff41",
         "_desc": "Toxic  (verde limão + amarelo ácido)",
     },
+    "neon_noir": {
+        "HEADER": "#c084fc", "ACCENT": "#22d3ee", "INFO": "#e0b3ff",
+        "SUCCESS": "#34d399", "WARN": "#fbbf24", "ERROR": "#f87171",
+        "PROGRESS": "#c084fc", "CYAN": "#22d3ee", "RED": "#f87171", "ORANGE": "#fb923c",
+        "_banner_start": "#c084fc", "_banner_end": "#22d3ee",
+        "_desc": "Neon Noir  (roxo + ciano elétrico)",
+    },
+    "peach_fuzz": {
+        "HEADER": "#ffb347", "ACCENT": "#ff6b6b", "INFO": "#ffe0cc",
+        "SUCCESS": "#a8e6cf", "WARN": "#ffd93d", "ERROR": "#e05c5c",
+        "PROGRESS": "#ffb347", "CYAN": "#ffd1a9", "RED": "#e05c5c", "ORANGE": "#ffb347",
+        "_banner_start": "#ffb347", "_banner_end": "#ff6b6b",
+        "_desc": "Peach Fuzz  (pêssego + coral)",
+    },
+    "void": {
+        "HEADER": "#e2e8f0", "ACCENT": "#94a3b8", "INFO": "#cbd5e1",
+        "SUCCESS": "#86efac", "WARN": "#fde68a", "ERROR": "#fca5a5",
+        "PROGRESS": "#e2e8f0", "CYAN": "#bae6fd", "RED": "#fca5a5", "ORANGE": "#fed7aa",
+        "_banner_start": "#e2e8f0", "_banner_end": "#94a3b8",
+        "_desc": "Void  (branco gelo + cinza frio)",
+    },
 }
 
 
@@ -298,11 +319,78 @@ def _mod():
     return sys.modules[__name__]
 
 
-def apply_theme_to_module(cfg: dict):
-    preset_name = cfg.get("preset")
-    base = {k: v for k, v in PRESETS[preset_name].items() if not k.startswith("_")} \
-        if preset_name and preset_name in PRESETS else dict(DEFAULT_THEME)
-    merged = {**base, **(cfg.get("colors") or {})}
+
+APP_COLORS: Dict[str, Dict[str, str]] = {
+    "ytb": {
+        "HEADER":   "#e53935",
+        "ACCENT":   "#ff6d6d",
+        "CYAN":     "#e53935",
+        "RED":      "#e53935",
+        "ORANGE":   "#ff6d6d",
+        "INFO":     "#ff8a80",
+        "SUCCESS":  "#2ecc71",
+        "WARN":     "#f1c40f",
+        "ERROR":    "#b71c1c",
+        "PROGRESS": "#e53935",
+        "_banner_start": "#e53935",
+        "_banner_end":   "#ff6d6d",
+    },
+    "sound": {
+        "HEADER":   "#ff6a00",
+        "ACCENT":   "#ffaa44",
+        "CYAN":     "#ff6a00",
+        "RED":      "#ff6a00",
+        "ORANGE":   "#ff6a00",
+        "INFO":     "#ffcc88",
+        "SUCCESS":  "#2ecc71",
+        "WARN":     "#f1c40f",
+        "ERROR":    "#b71c1c",
+        "PROGRESS": "#ff6a00",
+        "_banner_start": "#ff6a00",
+        "_banner_end":   "#ffaa44",
+    },
+    "spotify": {
+        "HEADER":   "#1DB954",
+        "ACCENT":   "#1ed760",
+        "CYAN":     "#1DB954",
+        "RED":      "#1DB954",
+        "ORANGE":   "#1ed760",
+        "INFO":     "#b3ffcc",
+        "SUCCESS":  "#1ed760",
+        "WARN":     "#f1c40f",
+        "ERROR":    "#b71c1c",
+        "PROGRESS": "#1DB954",
+        "_banner_start": "#1DB954",
+        "_banner_end":   "#1ed760",
+    },
+    "deezer": {
+        "HEADER":   "#a238ff",
+        "ACCENT":   "#ff6ec7",
+        "CYAN":     "#a238ff",
+        "RED":      "#a238ff",
+        "ORANGE":   "#ff6ec7",
+        "INFO":     "#e0b3ff",
+        "SUCCESS":  "#2ecc71",
+        "WARN":     "#f1c40f",
+        "ERROR":    "#b71c1c",
+        "PROGRESS": "#a238ff",
+        "_banner_start": "#a238ff",
+        "_banner_end":   "#ff6ec7",
+    },
+}
+
+
+def apply_theme_to_module(cfg: dict, modulo: str = ""):
+    color_mode = cfg.get("color_mode", "follow_preset")
+
+    if color_mode == "follow_app" and modulo and modulo in APP_COLORS:
+        merged = {**DEFAULT_THEME, **{k: v for k, v in APP_COLORS[modulo].items() if not k.startswith("_")}}
+    else:
+        preset_name = cfg.get("preset")
+        base = {k: v for k, v in PRESETS[preset_name].items() if not k.startswith("_")} \
+            if preset_name and preset_name in PRESETS else dict(DEFAULT_THEME)
+        merged = {**base, **(cfg.get("colors") or {})}
+
     mod = _mod()
     for role, h in merged.items():
         if not role.startswith("_") and hasattr(mod, role):

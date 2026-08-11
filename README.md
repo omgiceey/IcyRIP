@@ -1,4 +1,4 @@
-# ICYRIP v2.2
+# ICYRIP v2.3
 
 ```
 ░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓█▓▒░▒▓███████▓▒░
@@ -10,7 +10,7 @@
 ░▒▓█▓▒░░▒▓██████▓▒░   ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░
 ```
 
-> Ferramenta CLI em Python para baixar áudio e vídeo do **YouTube**, **SoundCloud** e **Spotify** usando `yt-dlp` + `ffmpeg`. Interface colorida, animada e totalmente no terminal.
+> Ferramenta CLI em Python para baixar áudio e vídeo do **YouTube**, **SoundCloud**, **Spotify** e **Deezer** usando `yt-dlp` + `ffmpeg`. Interface colorida, animada e totalmente no terminal.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
@@ -156,6 +156,7 @@ python main.py      # HUB principal (recomendado)
 python ytb.py       # YouTube direto
 python sound.py     # SoundCloud direto
 python spotify.py   # Spotify direto
+python deezer.py    # Deezer direto
 ```
 
 ---
@@ -225,6 +226,18 @@ chmod +x tools/yt-dlp tools/ffmpeg
 >
 > Para melhores resultados, mantenha o yt-dlp sempre atualizado (`yt-dlp -U` no HUB → Dependências).
 
+### 🟣 Deezer (ICYDEEZER)
+
+| Opção | Descrição |
+|-------|-----------|
+| Baixar Música | Faixa individual (`deezer.com/track/...`) |
+| Baixar Playlist | Todas as faixas (`deezer.com/playlist/...`) |
+| Baixar Álbum | Álbum em subpasta (`deezer.com/album/...`) |
+| Baixar Clipe | Trecho por tempo |
+| Converter | Converte arquivo local para qualquer formato de áudio |
+
+> **Como o Deezer funciona:** assim como o Spotify, o yt-dlp resolve URLs do Deezer buscando as faixas no **YouTube Music**. O áudio não vem dos servidores do Deezer.
+
 ### Formatos suportados
 
 - **Áudio:** MP3, WAV, FLAC, OGG, OPUS, AAC, M4A
@@ -239,11 +252,12 @@ chmod +x tools/yt-dlp tools/ffmpeg
 | `[1]` YouTube | Abre o módulo YouTube |
 | `[2]` SoundCloud | Abre o módulo SoundCloud |
 | `[3]` Spotify | Abre o módulo Spotify |
-| `[4]` Configurações | Idioma, temas, cores, fila, perfis, histórico com filtro por módulo, estatísticas |
-| `[5]` Dependências | Caminhos de yt-dlp/ffmpeg com versão em destaque, cookies, pasta tools/, atualizar yt-dlp |
-| `[6]` Verificar atualização | Checa nova versão e atualiza via `git pull` (requer Git) |
+| `[4]` Deezer | Abre o módulo Deezer |
+| `[5]` Configurações | Idioma, temas, cores, modo de cores, fila, perfis, histórico, estatísticas |
+| `[6]` Dependências | Caminhos de yt-dlp/ffmpeg com versão em destaque, cookies, pasta tools/, atualizar yt-dlp |
+| `[7]` Verificar atualização | Checa nova versão e atualiza via `git pull` (requer Git) |
 
-> Quem instalou por ZIP não pode usar a atualização automática do `[6]`. Baixe o ZIP da nova versão em [releases](https://github.com/omgiceey/IcyRIP/releases/latest) e substitua os arquivos.
+> Quem instalou por ZIP não pode usar a atualização automática do `[7]`. Baixe o ZIP da nova versão em [releases](https://github.com/omgiceey/IcyRIP/releases/latest) e substitua os arquivos.
 
 ---
 
@@ -265,7 +279,7 @@ chmod +x tools/yt-dlp tools/ffmpeg
 
 ## Temas e Presets
 
-O HUB inclui **19 presets de cores** com preview visual antes de aplicar:
+O HUB inclui **22 presets de cores** com preview visual antes de aplicar:
 
 | Preset | Descrição |
 |--------|-----------|
@@ -288,8 +302,20 @@ O HUB inclui **19 presets de cores** com preview visual antes de aplicar:
 | sakura | Rosa suave + Lilás |
 | slate | Cinza azulado + Teal |
 | toxic | Verde limão + Amarelo ácido |
+| neon_noir | Roxo + Ciano elétrico |
+| peach_fuzz | Pêssego + Coral |
+| void | Branco gelo + Cinza frio |
 
-Além dos presets, é possível customizar cada role de cor individualmente (HEX livre) e configurar o gradiente do banner ASCII por módulo (Hub, YouTube, SoundCloud, Spotify).
+Além dos presets, é possível customizar cada role de cor individualmente (HEX livre) e configurar o gradiente do banner ASCII por módulo (Hub, YouTube, SoundCloud, Spotify, Deezer).
+
+### Sistema follow_app
+
+Nas configurações (`[m]` no menu), é possível alternar entre dois modos de cores:
+
+| Modo | Comportamento |
+|------|---------------|
+| `follow_preset` | Todos os módulos seguem o preset global selecionado |
+| `follow_app` | Cada módulo usa sua cor característica (YouTube=vermelho, SoundCloud=laranja, Spotify=verde, Deezer=roxo) |
 
 ---
 
@@ -301,6 +327,7 @@ O arquivo de configuração fica em `~/.config/icyrip/config.json`.
 {
   "language": "pt",
   "preset": "default",
+  "color_mode": "follow_preset",
   "playlist_warning_threshold": 50,
   "verbose": false,
   "yt_dlp_path": null,
@@ -309,6 +336,11 @@ O arquivo de configuração fica em `~/.config/icyrip/config.json`.
   "restrict_filenames": false,
   "notifications": true,
   "use_archive": true,
+  "organizar_por_artista": false,
+  "verificar_integridade": true,
+  "max_retries": 3,
+  "retry_backoff": true,
+  "max_workers": 1,
   "colors": {},
   "ascii_style": "follow_theme",
   "ascii_colors": {}
@@ -320,10 +352,15 @@ Pelo **HUB → Configurações** é possível:
 - Aplicar preset de cores com preview
 - Customizar cor individual por role (HEX livre)
 - Customizar gradiente do banner ASCII por módulo
+- Alternar modo de cores (`follow_preset` / `follow_app`)
 - Ajustar limite de aviso de playlist
 - Ativar/desativar verbose
 - Configurar cookies do browser
 - Ativar restrição de nomes de arquivo
+- Organizar downloads por Artista/Álbum/Faixa
+- Verificar integridade pós-download via ffprobe
+- Configurar retry com backoff exponencial
+- Configurar downloads paralelos (1–6 workers)
 - Gerenciar perfis de download
 - Ver estatísticas e histórico
 - Exportar / importar / resetar configuração
@@ -338,13 +375,14 @@ icyrip/
 ├── ytb.py           Módulo YouTube
 ├── sound.py         Módulo SoundCloud
 ├── spotify.py       Módulo Spotify
+├── deezer.py        Módulo Deezer
 ├── requirements.txt
 ├── LICENSE
 ├── tools/           (opcional) coloque yt-dlp e ffmpeg aqui se não instalou globalmente
 ├── core/
-│   ├── colors.py    Sistema de cores, presets, gradientes
+│   ├── colors.py    Sistema de cores, presets, gradientes, follow_app
 │   ├── config.py    Leitura/escrita de configuração
-│   ├── downloader.py Lógica de download, progresso, conversão
+│   ├── downloader.py Lógica de download, progresso, conversão, paralelo, retry
 │   ├── i18n.py      Internacionalização (pt-BR / en)
 │   └── utils.py     Spinner, animações, histórico, execução de comandos
 └── README.md

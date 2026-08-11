@@ -4,6 +4,7 @@ import platform
 import re
 import shutil
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -34,6 +35,7 @@ from core.utils import (
     dequeue,
     remove_from_queue,
     clear_queue,
+    print_download_summary,
 )
 
 FORMATOS_AUDIO  = ["mp3", "wav", "flac", "ogg", "opus", "aac", "m4a"]
@@ -453,12 +455,169 @@ def resolver_pasta_playlist(yt_dlp_path, url, save_path, cor: str, label="playli
     return os.path.join(save_path, template)
 
 
+def _prompt_filtros_playlist(cor: str) -> list:
+    """Retorna args extras de filtro para yt-dlp (range e/ou palavra-chave)."""
+    args = []
+    _s = _theme_sep()
+    print(f"\n{_s}")
+    print(f"  {cor}Filtros opcionais  {colors.DIM}(Enter = baixar tudo){colors.RESET}")
+    print(f"  {colors.DIM}Range   ex: 5:15  |  do 5 ao 15     ex: 1:5  |  apenas 3,7,10{colors.RESET}")
+    print(f"  {colors.DIM}Filtro  ex: remix  |  só faixas com 'remix' no título{colors.RESET}")
+    print(_s)
+
+    rng = input(f"  {cor}Range (Enter = todos): {colors.RESET}").strip()
+    if rng:
+        args += ["--playlist-items", rng]
+
+    kw = input(f"  {cor}Palavra-chave no título (Enter = nenhum): {colors.RESET}").strip()
+    if kw:
+        args += ["--match-filter", f"title~=(?i){re.escape(kw)}"]
+
+    return args
+
+
 def _cfg_download():
     try:
         cfg = cfgmod.load_config()
         return cfg.get("audio_quality", "0"), cfg.get("restrict_filenames", False)
     except Exception:
         return "0", False
+
+
+def _verificar_integridade(filepath: str) -> bool:
+    try:
+        import subprocess as _sp
+        r = _sp.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", filepath],
+            stdout=_sp.PIPE, stderr=_sp.PIPE, text=True, timeout=15
+        )
+        if r.returncode != 0:
+            return False
+        dur = r.stdout.strip()
+        return bool(dur) and float(dur) > 0
+    except Exception:
+        return False
+
+
+def _executar_com_retry(cmd: list, mensagem_erro: str, entries: list | None,
+                        cor: str, save_path: str = "") -> tuple[bool, str | None]:
+    try:
+        cfg = cfgmod.load_config()
+        max_retries  = cfg.get("max_retries", 3)
+        use_backoff  = cfg.get("retry_backoff", True)
+        chk_integr   = cfg.get("verificar_integridade", True)
+    except Exception:
+        max_retries, use_backoff, chk_integr = 3, True, True
+
+    for attempt in range(1, max_retries + 1):
+        success, title = executar_comando(cmd, mensagem_erro, entries)
+        if success:
+            if chk_integr and save_path and title:
+                for ext in ("mp3", "flac", "ogg", "opus", "aac", "m4a", "wav"):
+                    candidate = os.path.join(save_path, f"{os.path.splitext(title)[0]}.{ext}")
+                    if os.path.isfile(candidate):
+                        if not _verificar_integridade(candidate):
+                            print(f"{colors.WARN}  ⚠  Arquivo corrompido, tentando novamente...{colors.RESET}")
+                            success = False
+                        break
+            if success:
+                return True, title
+
+        if attempt < max_retries:
+            wait = (2 ** attempt) if use_backoff else 2
+            print(f"{colors.WARN}  ↻  Tentativa {attempt}/{max_retries} falhou. Aguardando {wait}s...{colors.RESET}")
+            time.sleep(wait)
+        else:
+            print(f"{colors.ERROR}  ✗  {max_retries} tentativas esgotadas.{colors.RESET}")
+
+    return False, None
+
+
+def _out_template(save_path: str, filename: str = "%(title)s.%(ext)s") -> str:
+    try:
+        if cfgmod.load_config().get("organizar_por_artista", False):
+            return os.path.join(
+                save_path,
+                "%(artist,uploader|Desconhecido)s",
+                "%(album|Singles)s",
+                "%(track_number,playlist_index|)s%(track_number&- |)s%(title)s.%(ext)s",
+            )
+    except Exception:
+        pass
+    return os.path.join(save_path, filename)
+
+
+def _baixar_paralelo(
+    entries: list, yt_dlp_path: str, ffmpeg_path: str,
+    formato: str, postproc: list, qualidade: str,
+    restrict: bool, save_path: str, cor: str,
+    filtro_args: list, label: str = "playlist",
+) -> tuple[int, int]:
+    import concurrent.futures
+    try:
+        max_workers = max(1, min(cfgmod.load_config().get("max_workers", 1), 6))
+    except Exception:
+        max_workers = 1
+
+    total   = len(entries)
+    ok_cnt  = 0
+    err_cnt = 0
+    lock    = threading.Lock()
+
+    def _baixar_entry(idx_entry):
+        idx, entry = idx_entry
+        url_entry = entry.get("url") or entry.get("webpage_url") or ""
+        titulo    = entry.get("title") or entry.get("id") or url_entry[:40]
+        if not url_entry:
+            return False
+
+        out = _out_template(save_path)
+        cmd = build_cmd_audio(
+            yt_dlp_path, ffmpeg_path, formato, postproc, out, url_entry,
+            quality=qualidade, restrict=restrict, save_path=save_path,
+        ) + filtro_args
+
+        try:
+            cfg = cfgmod.load_config()
+            max_retries = cfg.get("max_retries", 3)
+            use_backoff = cfg.get("retry_backoff", True)
+            chk_integr  = cfg.get("verificar_integridade", True)
+        except Exception:
+            max_retries, use_backoff, chk_integr = 3, True, True
+
+        success = False
+        for attempt in range(1, max_retries + 1):
+            ok, title = executar_comando(cmd, "", None)
+            if ok:
+                if chk_integr and title:
+                    for ext in ("mp3", "flac", "ogg", "opus", "aac", "m4a", "wav"):
+                        candidate = os.path.join(save_path, f"{os.path.splitext(title)[0]}.{ext}")
+                        if os.path.isfile(candidate):
+                            if not _verificar_integridade(candidate):
+                                ok = False
+                            break
+                if ok:
+                    success = True
+                    break
+            if attempt < max_retries:
+                time.sleep((2 ** attempt) if use_backoff else 2)
+
+        icon = f"{colors.SUCCESS}✔{colors.RESET}" if success else f"{colors.ERROR}✗{colors.RESET}"
+        name_short = titulo[:50] if len(titulo) > 50 else titulo
+        with lock:
+            sys.stdout.write(f"  {icon}  {colors.DIM}[{idx}/{total}]{colors.RESET}  {name_short}\n")
+            sys.stdout.flush()
+        return success
+
+    print(f"\n{cor}  ⬇  Baixando {label} — {total} faixas  {colors.DIM}({max_workers} paralelo{'s' if max_workers > 1 else ''}){colors.RESET}\n")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = list(executor.map(_baixar_entry, enumerate(entries, 1)))
+
+    ok_cnt  = sum(1 for r in results if r)
+    err_cnt = sum(1 for r in results if not r)
+    return ok_cnt, err_cnt
 
 
 def _tempo_para_sec(t: str) -> float:
@@ -541,14 +700,12 @@ def baixar_musica(save_path, yt_dlp_path, ffmpeg_path, cor: str, validar_url=Non
         _mostrar_preview(yt_dlp_path, url, cor)
         if len(total_urls) > 1 and not confirmar(f"  Baixar este item?", cor):
             continue
-        try:
-            out = safe_join(save_path, "%(title)s.%(ext)s")
-        except ValueError:
-            print(f"{colors.ERROR}  Caminho inválido.{colors.RESET}"); continue
+        out = _out_template(save_path)
         cmd = build_cmd_audio(yt_dlp_path, ffmpeg_path, formato, postproc, out, url,
                               quality=qualidade, restrict=restrict, save_path=save_path)
+        cmd.insert(1, "--no-playlist")
         print(f"\n{cor}  ⬇  Baixando música...{colors.RESET}")
-        success, title = executar_comando(cmd, "Falha ao baixar música.", None)
+        success, title = _executar_com_retry(cmd, "Falha ao baixar música.", None, cor, save_path)
         if success:
             total_ok += 1
             record_download(url, title, save_path, "musica")
@@ -583,6 +740,8 @@ def baixar_playlist(save_path, yt_dlp_path, ffmpeg_path, cor: str,
     postproc = build_postproc(embutir)
     _, restrict = _cfg_download()
 
+    filtro_args = _prompt_filtros_playlist(cor)
+
     info = with_spinner(
         f"Buscando informações da {label}...",
         lambda: get_playlist_info(yt_dlp_path, url), cor
@@ -592,14 +751,36 @@ def baixar_playlist(save_path, yt_dlp_path, ffmpeg_path, cor: str,
         pausar(cor); return
 
     out_template = _resolver_pasta_de_info(info, save_path, cor, label)
-    cmd = build_cmd_audio(yt_dlp_path, ffmpeg_path, formato, postproc, out_template, url,
-                          quality=qualidade, restrict=restrict, save_path=save_path)
-    print(f"\n{cor}  ⬇  Baixando {label}...{colors.RESET}")
-    success, _ = executar_comando(cmd, f"Falha ao baixar {label}.", entries)
-    if success:
+
+    try:
+        max_workers = max(1, min(cfgmod.load_config().get("max_workers", 1), 6))
+    except Exception:
+        max_workers = 1
+
+    entries_full = info.get("entries_full", entries) if info else entries
+
+    if max_workers > 1 and entries_full and isinstance(entries_full[0], dict):
+        _start = time.time()
+        ok_cnt, err_cnt = _baixar_paralelo(
+            entries_full, yt_dlp_path, ffmpeg_path,
+            formato, postproc, qualidade, restrict,
+            save_path, cor, filtro_args, label,
+        )
+        elapsed = time.time() - _start
+        print_download_summary(ok_cnt + err_cnt, err_cnt, elapsed)
         record_download(url, info.get("title"), save_path, label)
-        print(f"{colors.SUCCESS}  ✔ {label.capitalize()} salva em: {save_path}{colors.RESET}")
-        notify(f"ICYRIP — {label.capitalize()} concluída", f"{info.get('title', '')} → {save_path}")
+        notify(f"ICYRIP — {label.capitalize()} concluída",
+               f"{ok_cnt} ok, {err_cnt} erros → {save_path}")
+    else:
+        cmd = build_cmd_audio(yt_dlp_path, ffmpeg_path, formato, postproc, out_template, url,
+                              quality=qualidade, restrict=restrict, save_path=save_path)
+        cmd = cmd[:-1] + filtro_args + [cmd[-1]]
+        print(f"\n{cor}  ⬇  Baixando {label}...{colors.RESET}")
+        success, _ = _executar_com_retry(cmd, f"Falha ao baixar {label}.", entries, cor, save_path)
+        if success:
+            record_download(url, info.get("title"), save_path, label)
+            print(f"{colors.SUCCESS}  ✔ {label.capitalize()} salva em: {save_path}{colors.RESET}")
+            notify(f"ICYRIP — {label.capitalize()} concluída", f"{info.get('title', '')} → {save_path}")
     pausar(cor)
 
 
@@ -623,6 +804,8 @@ def baixar_album(save_path, yt_dlp_path, ffmpeg_path, cor: str):
     postproc = build_postproc(embutir)
     _, restrict = _cfg_download()
 
+    filtro_args = _prompt_filtros_playlist(cor)
+
     info = with_spinner(
         "Buscando informações do álbum...",
         lambda: get_playlist_info(yt_dlp_path, url), cor
@@ -645,12 +828,34 @@ def baixar_album(save_path, yt_dlp_path, ffmpeg_path, cor: str):
 
     cmd = build_cmd_audio(yt_dlp_path, ffmpeg_path, formato, postproc, out_template, url,
                           quality=qualidade, restrict=restrict, save_path=save_path)
-    print(f"\n{cor}  ⬇  Baixando álbum...{colors.RESET}")
-    success, _ = executar_comando(cmd, "Falha ao baixar álbum.", entries)
-    if success:
+    cmd = cmd[:-1] + filtro_args + [cmd[-1]]
+
+    try:
+        max_workers = max(1, min(cfgmod.load_config().get("max_workers", 1), 6))
+    except Exception:
+        max_workers = 1
+
+    entries_full = info.get("entries_full", entries) if info else entries
+
+    if max_workers > 1 and entries_full and isinstance(entries_full[0], dict):
+        _start = time.time()
+        ok_cnt, err_cnt = _baixar_paralelo(
+            entries_full, yt_dlp_path, ffmpeg_path,
+            formato, postproc, qualidade, restrict,
+            save_path, cor, filtro_args, "álbum",
+        )
+        elapsed = time.time() - _start
+        print_download_summary(ok_cnt + err_cnt, err_cnt, elapsed)
         record_download(url, title, save_path, "álbum")
-        print(f"{colors.SUCCESS}  ✔ Álbum salvo em: {save_path}{colors.RESET}")
-        notify("ICYRIP — Álbum concluído", f"{title or ''} → {save_path}")
+        notify("ICYRIP — Álbum concluído",
+               f"{ok_cnt} ok, {err_cnt} erros → {save_path}")
+    else:
+        print(f"\n{cor}  ⬇  Baixando álbum...{colors.RESET}")
+        success, _ = _executar_com_retry(cmd, "Falha ao baixar álbum.", entries, cor, save_path)
+        if success:
+            record_download(url, title, save_path, "álbum")
+            print(f"{colors.SUCCESS}  ✔ Álbum salvo em: {save_path}{colors.RESET}")
+            notify("ICYRIP — Álbum concluído", f"{title or ''} → {save_path}")
     pausar(cor)
 
 
@@ -678,7 +883,7 @@ def baixar_video(save_path, yt_dlp_path, ffmpeg_path, cor: str):
         cmd = build_cmd_video(yt_dlp_path, ffmpeg_path, formato, fmt_sel, out, url,
                               restrict=restrict, save_path=save_path)
         print(f"\n{cor}  ⬇  Baixando vídeo...{colors.RESET}")
-        success, title = executar_comando(cmd, "Falha ao baixar vídeo.", None)
+        success, title = _executar_com_retry(cmd, "Falha ao baixar vídeo.", None, cor, save_path)
         if success:
             total_ok += 1
             record_download(url, title, save_path, "video")
@@ -885,6 +1090,23 @@ def processar_fila(yt_dlp_path: str, ffmpeg_path: str, cor: str):
     notify("ICYRIP — Fila concluída", msg)
     print(f"\n{colors.SUCCESS}  ✔ Fila finalizada — {msg}{colors.RESET}")
     pausar(cor)
+
+
+def abrir_pasta(save_path: str, cor: str):
+    import subprocess as _sp
+    import platform as _pl
+    try:
+        pasta = str(Path(save_path).resolve())
+        s = _pl.system()
+        if s == "Linux":
+            _sp.Popen(["xdg-open", pasta])
+        elif s == "Darwin":
+            _sp.Popen(["open", pasta])
+        elif s == "Windows":
+            _sp.Popen(["explorer", pasta])
+        print(f"{colors.SUCCESS}  ✔ Abrindo: {pasta}{colors.RESET}")
+    except Exception as e:
+        print(f"{colors.ERROR}  Erro ao abrir pasta: {e}{colors.RESET}")
 
 
 def menu_fila(yt_dlp_path: str, ffmpeg_path: str, cor: str, save_path: str, modulo: str):

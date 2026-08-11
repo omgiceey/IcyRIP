@@ -15,6 +15,7 @@ from core.downloader import (
     configurar_pasta, get_pasta_salva,
     baixar_musica, baixar_playlist, baixar_album,
     baixar_video, baixar_clipe, converter_para_audio,
+    abrir_pasta,
 )
 
 MODULO = "ytb"
@@ -38,6 +39,10 @@ def _resolve_banner_colors():
     try:
         import core.config as _cfg
         cfg   = _cfg.load_config()
+        if cfg.get("color_mode", "follow_preset") == "follow_app":
+            from core.colors import APP_COLORS
+            ac = APP_COLORS.get("ytb", {})
+            return ac["_banner_start"], ac["_banner_end"]
         start = colors.theme_color(cfg, "RED")
         end   = colors.theme_color(cfg, "ACCENT")
         raw   = cfg.get("ascii_style", "follow_theme")
@@ -66,7 +71,7 @@ def mostrar_header(animated: bool = False):
 
     _sep = sep(s_hex, e_hex)
     print(_sep)
-    print(f"{_C()}  ✦ ICYRIP YouTube (ICYTB) v2.1  ·  By Icey  ·  Powered by yt-dlp  ✦{RST}")
+    print(f"{_C()}  ✦ ICYRIP YouTube (ICYTB) v2.3  ·  By Icey  ·  Powered by yt-dlp  ✦{RST}")
     print(_sep)
 
 
@@ -82,6 +87,7 @@ def exibir_opcoes(save_path: str):
     print(compact_row("6", "🔄  Converter para áudio",  "converte arquivo local",        _C(),          tw))
     print(compact_line(tw))
     print(compact_row("7", "📁  Alterar pasta",         "muda destino dos downloads",    _C(),          tw))
+    print(compact_row("p", "📂  Abrir pasta",           "abre o explorador de arquivos",  _C(),          tw))
     print(compact_row("f", "📌  Fila",                   "gerenciar fila de downloads",   _C(),          tw))
     print(compact_row("8", "←   Voltar ao HUB",         "menu principal",                colors.DIM, tw))
     print(compact_row("0", "✕   Sair",                   "encerrar",                      colors.DIM, tw))
@@ -104,7 +110,7 @@ def menu(yt_dlp_path, ffmpeg_path):
         while True:
             from core import config as _cfgmod
             _cfg = _cfgmod.load_config()
-            apply_theme_to_module(_cfg)
+            apply_theme_to_module(_cfg, MODULO)
             mostrar_header(animated=True)
             exibir_opcoes(save_path)
             opcao = input(f"\n{_C()}  ❯ {RST}").strip()
@@ -113,6 +119,8 @@ def menu(yt_dlp_path, ffmpeg_path):
                 acoes[opcao](save_path)
             elif opcao == "7":
                 save_path = configurar_pasta(MODULO, _C(), "Músicas")
+            elif opcao == "p":
+                abrir_pasta(save_path, _C())
             elif opcao == "f":
                 from core.downloader import menu_fila
                 menu_fila(yt_dlp_path, ffmpeg_path, _C(), save_path, "musica")
