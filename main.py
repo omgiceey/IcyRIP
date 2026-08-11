@@ -19,6 +19,23 @@ from core.i18n import t
 
 VERSION = "2.3"
 
+
+def _raiz_git() -> Path | None:
+    """Localiza a raiz do clone, mesmo quando o script foi chamado por outro caminho."""
+    candidatos = (Path(__file__).resolve().parent, Path.cwd().resolve())
+    for pasta in dict.fromkeys(candidatos):
+        try:
+            resultado = subprocess.run(
+                ["git", "-C", str(pasta), "rev-parse", "--show-toplevel"],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+            )
+            if resultado.returncode == 0:
+                return Path(resultado.stdout.strip())
+        except (OSError, ValueError):
+            pass
+    return None
+
+
 ASCII = r"""
 ░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓█▓▒░▒▓███████▓▒░
 ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
@@ -446,12 +463,17 @@ def _verificar_patch(version: str):
         _pausar()
         return
 
+    repo_dir = _raiz_git()
+    if not repo_dir:
+        print(f"{colors.ERROR}  ✗ Esta cópia não é um clone Git. Atualize manualmente ou clone o repositório novamente.{R}")
+        _pausar()
+        return
+
     print(f"\n{C}  Aplicando patch...{R}")
     result = {}
     def _pull():
         import subprocess as _sp
-        r = _sp.run(["git", "pull", "origin", "main"],
-                    cwd=Path(__file__).resolve().parent,
+        r = _sp.run(["git", "-C", str(repo_dir), "pull", "origin", "main"],
                     stdout=_sp.PIPE, stderr=_sp.STDOUT, text=True)
         result["ok"]  = r.returncode == 0
         result["out"] = r.stdout.strip()
@@ -560,12 +582,17 @@ def _verificar_update():
         _pausar()
         return
 
+    repo_dir = _raiz_git()
+    if not repo_dir:
+        print(f"{colors.ERROR}  ✗ Esta cópia não é um clone Git. Atualize manualmente ou clone o repositório novamente.{R}")
+        _pausar()
+        return
+
     print(f"\n{C}  {t('update_applying')}{R}")
     result = {}
     def _pull():
         import subprocess as _sp
-        r = _sp.run(["git", "pull", "origin", "main"],
-                    cwd=Path(__file__).resolve().parent,
+        r = _sp.run(["git", "-C", str(repo_dir), "pull", "origin", "main"],
                     stdout=_sp.PIPE, stderr=_sp.STDOUT, text=True)
         result["ok"] = r.returncode == 0
         result["out"] = r.stdout.strip()
